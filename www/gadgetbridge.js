@@ -25,7 +25,7 @@ function GadgetbridgePlugin() {
  * @param  {function} successCallback the success callback (no arguments)
  * @param  {function} errorCallback the error callback
  */
-GadgetbridgePlugin.prototype.openView = function(viewType, successCallback, errorCallback) {
+GadgetbridgePlugin.prototype.openView = function(viewType, successCallback, errorCallback) {//TODO use option object instead of arg-list?
 
      return exec(successCallback, errorCallback, "GadgetbridgePlugin", viewType, []);
 };
@@ -38,7 +38,7 @@ GadgetbridgePlugin.prototype.openView = function(viewType, successCallback, erro
  * @param  {number} [timeout] OPTIONAL
  *                           timeout for retrieving the batter level (if omitted, default timeout is used).
  */
-GadgetbridgePlugin.prototype.getBatteryLevel = function(successCallback, errorCallback, timeout) {
+GadgetbridgePlugin.prototype.getBatteryLevel = function(successCallback, errorCallback, timeout) {//TODO use option object instead of arg-list?
 
 		var args = typeof timeout === 'number'? [timeout] : [];
     return exec(successCallback, errorCallback, "GadgetbridgePlugin", "battery_level", args);
