@@ -95,15 +95,17 @@ public class GadgetbridgePlugin extends CordovaPlugin {
         protected final long timestamp;
         protected final long timeout;
         protected CallbackContext callbackContext;
+        protected final String description;
 
-        public AsyncDeviceResult(CallbackContext callbackContext) {
-            this(callbackContext, -1l);
+        public AsyncDeviceResult(CallbackContext callbackContext, String description) {
+            this(callbackContext, description, -1l);
         }
 
-        public AsyncDeviceResult(CallbackContext callbackContext, long timeout) {
+        public AsyncDeviceResult(CallbackContext callbackContext, String description, long timeout) {
             this.timestamp = System.currentTimeMillis();
             this.timeout = timeout > 0 ? timeout : RESULT_TIMEOUT;
             this.callbackContext = callbackContext;
+            this.description = description;
         }
 
         /**
@@ -157,7 +159,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
                                         asyncResult = it.next();
                                         if (asyncResult.sendResult(device) || (timedOut = now - asyncResult.timestamp > asyncResult.timeout)) {
                                             if (timedOut) {
-                                                doSendTimeoutError(asyncResult.callbackContext);
+                                                doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
                                             }
                                             it.remove();
                                         }
@@ -243,14 +245,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
         } else {
 
 
-            if (start(action)) {
-                callbackContext.success();
-            } else {
-
-                // Invalid action -> trigger callback as error
-                callbackContext.error("Unknown action: " + action);
-
-                // ... and "notify" Cordova by returning FALSE:
+            if (!start(action, callbackContext)) {
                 isValidAction = false;
             }
         }
@@ -262,12 +257,20 @@ public class GadgetbridgePlugin extends CordovaPlugin {
     @Override
     public void onNewIntent(Intent intent) {
 
-        LOG.d(PLUGIN_NAME, "onNewIntent: " + intent);
+        LOG.d(PLUGIN_NAME, "onNewIntent: " + intent);//DEBUG
 
         super.onNewIntent(intent);
     }
 
-    protected boolean start(final String target) {
+    /**
+     * Handels invocation of views/activities in the Gadgetbridge app.
+     *
+     * @param target the class name of the targeted view/activity
+     * @param callbackContext the callback context for sending the plugin result
+     *
+     * @return TRUE if there is a valid action for <code>target</code>
+     */
+    protected boolean start(final String target, final CallbackContext callbackContext) {
 
         Class targetCl;
         GBDevice device = null;
@@ -302,8 +305,17 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
         } else if (target.equals(ACTION_START_CHARTS)) {
             targetCl = ChartsActivity.class;
-
             device = getDevice();
+
+            if(device == null){
+
+                targetCl = null;
+
+                String msg = "Could not start activity \""+target+"\": ";
+                doSendNoDeviceError(callbackContext, msg);
+
+                return true;////////////// EARLY EXIT ////////////////////////
+            }
 
         }
 //        else if (target.equals(ACTION_START_ALARM)) {
@@ -321,17 +333,29 @@ public class GadgetbridgePlugin extends CordovaPlugin {
         }
 
         if (targetCl == null) {
-            return false;
+            String msg = "Requested unknown activity for starting: '"+target+"'";
+            LOG.e(PLUGIN_NAME, msg);
+            callbackContext.error(msg);//TODO send errorCode / normalize error?
+            return false;////////////// EARLY EXIT ////////////////////////
         }
 
-        Intent intent = new Intent(this.cordova.getActivity(), targetCl);
-        if (device != null) {
-            intent.putExtra(GBDevice.EXTRA_DEVICE, device);
+        try {
+
+            Intent intent = new Intent(this.cordova.getActivity(), targetCl);
+            if (device != null) {
+                intent.putExtra(GBDevice.EXTRA_DEVICE, device);
+            }
+            if (alarm != null) {
+                intent.putExtra("alarm", alarm);
+            }
+
+            this.cordova.getActivity().startActivity(intent);
+
+        } catch(Exception exc){
+            String msg = "Could not start activity \""+target+"\"";
+            LOG.e(PLUGIN_NAME, msg, exc);
+            callbackContext.error(msg+": "+exc);//TODO send errorCode / normalize error?
         }
-        if (alarm != null) {
-            intent.putExtra("alarm", alarm);
-        }
-        this.cordova.getActivity().startActivity(intent);
 
         return true;
     }
@@ -346,11 +370,13 @@ public class GadgetbridgePlugin extends CordovaPlugin {
             } else {
 
                 synchronized (_pendingResultLock) {
-                    _pendingResults.add(new AsyncDeviceResult(callbackContext, timeout) {
+
+                    //register callback, listening to changes in the GBDevice
+                    _pendingResults.add(new AsyncDeviceResult(callbackContext, "Battery Level", timeout) {
                         @Override
                         public boolean sendResult(GBDevice device) {
                             int level = device.getBatteryLevel();
-                            LOG.d(PLUGIN_NAME, "ASYNC device battery" + level);
+                            LOG.d(PLUGIN_NAME, "ASYNC device battery" + level);//DEBUG
                             if (level != -1) {
                                 this.callbackContext.success(level);
                                 return true;
@@ -366,7 +392,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
             }
         } else {
-            callbackContext.error("No device available");//TODO send errorCode / normalized error
+            doSendNoDeviceError(callbackContext, "Could not determine battery level: ");
         }
 
     }
@@ -392,8 +418,16 @@ public class GadgetbridgePlugin extends CordovaPlugin {
         return this._device;
     }
 
-    protected static void doSendTimeoutError(CallbackContext callbackContext) {
-        callbackContext.error("timeout");
+    protected static void doSendTimeoutError(CallbackContext callbackContext, String message) {
+        String msg = message  + "timeout";
+        LOG.e(PLUGIN_NAME, msg);
+        callbackContext.error(msg);//TODO send errorCode / normalize error
+    }
+
+    protected static void doSendNoDeviceError(CallbackContext callbackContext, String message) {
+        String msg = message  + "No device available";
+        LOG.e(PLUGIN_NAME, msg);
+        callbackContext.error(msg);//TODO send errorCode / normalize error
     }
 
     protected void startCheckPendingTimeout() {
@@ -433,7 +467,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
                         while (it.hasNext()) {
                             asyncResult = it.next();
                             if (now - asyncResult.timestamp > asyncResult.timeout) {
-                                doSendTimeoutError(asyncResult.callbackContext);
+                                doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
                                 it.remove();
                             }
                         }
