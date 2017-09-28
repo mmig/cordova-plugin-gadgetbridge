@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<project name="Update Gadgetbrige JAR from AAR (Eclipse)" default="update-lib">
+	
+	<property name="lib-file" location="res/android/libs/gadgetbridge.aar"/>
+	<property name="lib-dest" location="stub/android-lib"/>
+	
+	<target name="update-lib" description="update lib bin files (from aar) for Eclipse">
+		<unzip src="${lib-file}"
+		       dest="${lib-dest}">
+		</unzip>
+	</target>
+	
+</project>
