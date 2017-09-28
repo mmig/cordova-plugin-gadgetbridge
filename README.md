@@ -24,7 +24,7 @@ into the plugin's directory (and rename file to):
 Ensure the Gadgetbridge's dependencies are up-to-date:
 Open Gadgetbridge's `build.gradle` (for the app) file, and check the `dependencies {` section for the
 entry `compile fileTree(dir: 'libs', include: ['*.jar'])`:  
-copy&paste the following `compile` entries to the plugin's gradle file at  
+copy&paste the `compile` entries of the `dependencies {` section into the plugin's gradle file at  
 `res/android/res/gadgetbridgeBuild.gradle`
 
 e.g. something like
