@@ -4,7 +4,7 @@
     xmlns="http://cordova.apache.org/ns/plugins/1.0"
 	xmlns:android="http://schemas.android.com/apk/res/android"
     id="mmir-plugin-gadgetbridge"
-    version="0.0.1">
+    version="0.1.0">
 
     <name>GadgetbridgePlugin</name>
 
@@ -26,14 +26,6 @@
     	<clobbers target="window.cordova.plugins.gadgetbridgePlugin" />
     </js-module>
 
-    <!-- module implementation for integration into MMIR framework  -->
-    <!--asset
-        src="www/nuanceAudioInput.js"
-        target="mmirf/env/media/nuanceAudioInput.js" />
-    <asset
-        src="www/nuanceTextToSpeech.js"
-        target="mmirf/env/media/nuanceTextToSpeech.js" /-->
-
     <!-- android -->
     <platform name="android">
 
@@ -54,10 +46,10 @@
         <source-file
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/GadgetbridgePlugin.java"
             target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
-
-        <!--source-file
-            src="res/android/res/raw/rawbeep.wav"
-            target-dir="res/raw" /-->
+            
+        <source-file
+            src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/SettingsUtil.java"
+            target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
 
         <!--framework src="com.android.support:appcompat-v7:23.3.0" />
         <framework src="com.android.support:support-v4:23.3.0" />

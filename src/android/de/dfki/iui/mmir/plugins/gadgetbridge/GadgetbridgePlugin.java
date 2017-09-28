@@ -1,14 +1,5 @@
 package de.dfki.iui.mmir.plugins.gadgetbridge;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaInterface;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.LOG;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,10 +8,23 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.support.v4.content.LocalBroadcastManager;
 
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.LOG;
+import org.apache.cordova.PluginResult;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,14 +39,22 @@ import nodomain.freeyourgadget.gadgetbridge.activities.SettingsActivity;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.ChartsActivity;
 import nodomain.freeyourgadget.gadgetbridge.database.DBAccess;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceManager;
 import nodomain.freeyourgadget.gadgetbridge.devices.SampleProvider;
 import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandPairingActivity;
 import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandPreferencesActivity;
+import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandSampleProvider;
+import nodomain.freeyourgadget.gadgetbridge.entities.DaoSession;
+import nodomain.freeyourgadget.gadgetbridge.entities.Device;
+import nodomain.freeyourgadget.gadgetbridge.entities.MiBandActivitySample;
+import nodomain.freeyourgadget.gadgetbridge.entities.User;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.Alarm;
+import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
+import nodomain.freeyourgadget.gadgetbridge.model.NotificationType;
 import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 
@@ -51,770 +63,1542 @@ import nodomain.freeyourgadget.gadgetbridge.util.GB;
  */
 public class GadgetbridgePlugin extends CordovaPlugin {
 
-  public static final String ACTION_START_CONTROL_CENTER = "ControlCenterv2";
-  public static final String ACTION_START_SETTINGS = "SettingsActivity";
-  public static final String ACTION_START_MI_BAND_SETTINGS = "MiBandPreferencesActivity";
-  public static final String ACTION_START_BLACKLIST = "AppBlacklistActivity";
-  public static final String ACTION_START_DEBUG = "DebugActivity";
-  public static final String ACTION_START_DB_MANAGEMENT = "DbManagementActivity";
-  public static final String ACTION_START_DISCOVERY = "DiscoveryActivity";
-  public static final String ACTION_START_PARING = "MiBandPairingActivity";
-  public static final String ACTION_START_ALARMS = "ConfigureAlarms";
+	public static final String ACTION_START_CONTROL_CENTER = "ControlCenterv2";
+	public static final String ACTION_START_SETTINGS = "SettingsActivity";
+	public static final String ACTION_START_MI_BAND_SETTINGS = "MiBandPreferencesActivity";
+	public static final String ACTION_START_BLACKLIST = "AppBlacklistActivity";
+	public static final String ACTION_START_DEBUG = "DebugActivity";
+	public static final String ACTION_START_DB_MANAGEMENT = "DbManagementActivity";
+	public static final String ACTION_START_DISCOVERY = "DiscoveryActivity";
+	public static final String ACTION_START_PARING = "MiBandPairingActivity";
+	public static final String ACTION_START_ALARMS = "ConfigureAlarms";
 
-  public static final String ACTION_START_CHARTS = "ChartsActivity";
-  public static final String ACTION_START_ALARM = "AlarmDetails";
+	public static final String ACTION_START_CHARTS = "ChartsActivity";
+	public static final String ACTION_START_ALARM = "AlarmDetails";
 
-  public static final String ACTION_BATTERY_LEVEL = "battery_level";
-  public static final String ACTION_SYNCHRONIZE_DATA = "sync";
-  public static final String ACTION_RETRIEVE_DATA = "retrieve";
+	public static final String ACTION_CONNECT = "connect";
+	public static final String ACTION_IS_CONNECTED = "is_connected";
+	public static final String ACTION_DEVICE_INFO = "device_info";
+	public static final String ACTION_BATTERY_LEVEL = "battery_level";
+	public static final String ACTION_SYNCHRONIZE_DATA = "sync";
+	public static final String ACTION_RETRIEVE_DATA = "retrieve";
+	public static final String ACTION_REMOVE_DATA = "remove";
+	public static final String ACTION_ADD_CONNECTION_LISTENER = "on_connect";
+	public static final String ACTION_REMOVE_CONNECTION_LISTENER = "off_connect";
+	private static final String ACTION_FIRE_NOTIFICATION = "fire_notification";
+	private static final String ACTION_GET_CONFIG = "get_config";
+	private static final String ACTION_SET_CONFIG = "set_config";
 
-  static final String PLUGIN_NAME = GadgetbridgePlugin.class.getSimpleName();
-  private static final String NAME_SYNC_TASK = "busy_task_fetch_activity_data";
+	private static final String TASK_CONNECTION_STATE_LISTENER = "Connection State Listener";
+	private static final String TASK_CONNECTING_DEVICE = "Connecting Device";
+	private static final String TASK_BATTERY_LEVEL = "Battery Level";
+	private static final String TASK_SYNCHRONIZE_DATA = "Synchronize Data";
+	private static final String TASK_RETRIEVING_DATA = "Retrieving Data";
+	private static final String TASK_REMOVING_DATA = "Removing Data";
+	private static final String TASK_INSERTING_DATA = "Inserting Data";
 
-  private DeviceManager _deviceManager;
-  private GBDevice _device;
+	static final String PLUGIN_NAME = GadgetbridgePlugin.class.getSimpleName();
+	/** field type: double */
+	public static final String FIELD_ACTIVITY = "activity";
+	/** field type: float */
+	public static final String FIELD_LIGHT_SLEEP = "sleep1";
+	/** field type: float */
+	public static final String FIELD_DEEP_SLEEP = "sleep2";
+	/** field type: boolean */
+	public static final String FIELD_NOT_WORN = "notWorn";
+	/** field type: int (10 digits) */
+	public static final String FIELD_TIMESTAMP = "timestamp";
+	/** field type: int */
+	public static final String FIELD_STEPS = "steps";
+	/** field type: int [1,254] */
+	public static final String FIELD_HEART_RATE = "heartRate";
+	/** field type: int */
+	public static final String FIELD_RAW_INTENSITY = "raw";
 
-  /* locking object for synchronized/thread-safe access to _pendingResults:
-   * wrap every access to _pendingResults with this locker!
-   */
-  private Object _pendingResultLock = new Object();
-  private LinkedList<AsyncDeviceResult> _pendingResults = new LinkedList<AsyncDeviceResult>();
+	public static final String INFO_FIELD_ADDRESS = "address";
+	public static final String INFO_FIELD_NAME = "name";
+	public static final String INFO_FIELD_MODEL = "model";
+	public static final String INFO_FIELD_TYPE = "type";
+	public static final String INFO_FIELD_FIRMWARE = "firmware";
+	public static final String INFO_FIELD_STATE = "state";
 
-  private Timer _pendingResultTimeoutTimer;
-  private Object _pendingResultTimeoutTaskLock = new Object();
-  private TimerTask _pendingResultTimeoutTask;
-  private static final long RESULT_TIMEOUT = 5000l;//5 sec
+	private static String _buttonBroadcastName;
 
-  /**
-   * Helper class representing PluginResults that are pending, i.e. waiting on
-   * on updated device information.
-   * <p>
-   * Add to <code>_pendingResults</code>:
-   * <pre>
-   *     synchronized(_pendingResultLock){
-   *         _pendingResults.add(new AsyncDeviceResult(theCallbackContext){
-   *              @Override
-   *              public boolean sendResult(GBDevice device) {
-   *
-   *                  //check if device has desired information etc. ...
-   *
-   *              }
-   *         });
-   *     }
-   * </pre>
-   */
-  private abstract class AsyncDeviceResult {
+	private DeviceManager _deviceManager;
+	private GBDevice _device;
 
-    protected final long timestamp;
-    protected final long timeout;
-    protected CallbackContext callbackContext;
-    protected final String description;
+	/* locking object for synchronized/thread-safe access to _pendingResults:
+	 * wrap every access to _pendingResults with this locker!
+	 */
+	private Object _pendingResultLock = new Object();
+	private LinkedList<AsyncDeviceResult> _pendingResults = new LinkedList<AsyncDeviceResult>();
 
-    public AsyncDeviceResult(CallbackContext callbackContext, String description) {
-      this(callbackContext, description, -1l);
-    }
+	private Timer _pendingResultTimeoutTimer;
+	private Object _pendingResultTimeoutTaskLock = new Object();
+	private TimerTask _pendingResultTimeoutTask;
+	private static final long RESULT_TIMEOUT = 5000l;//5 sec
 
-    public AsyncDeviceResult(CallbackContext callbackContext, String description, long timeout) {
-      this.timestamp = System.currentTimeMillis();
-      this.timeout = timeout > 0 ? timeout : RESULT_TIMEOUT;
-      this.callbackContext = callbackContext;
-      this.description = description;
-    }
 
-    /**
-     * Implementations should first check (efficiently!) if <code>device</code> contains
-     * the needed information and if not, immediately return <code>false</code>.
-     * <p>
-     * If the <code>device</code> contains the information, a PluginResult can be sent
-     * via <code>this.callbackContext</code>.
-     * <p>
-     * If the method returns <code>false</code>, the AsnycDeviceResult
-     * was <strong>not</strong> consumed and should stay active
-     * (e.g. no PluginResult was sent or callbackContext was kept open).
-     *
-     * @param device the device that was updated
-     * @return true, if this AsyncDeviceResult was consumed
-     */
-    abstract public boolean sendResult(GBDevice device);
-  }
+	private Object _notificationRepeatTaskLock = new Object();
+	private TimerTask _notificationRepeatTask;
+	private static final long NOTIFICATION_REPEAT_DELAY = 15000l;//15 sec
 
-  private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      String action = intent.getAction();
-      if (GBApplication.ACTION_QUIT.equals(action)) {
+	/**
+	 * Helper class representing PluginResults that are pending, i.e. waiting on
+	 * on updated device information.
+	 * <p>
+	 * Add to <code>_pendingResults</code>:
+	 * <pre>
+	 *     synchronized(_pendingResultLock){
+	 *         _pendingResults.add(new AsyncDeviceResult(theCallbackContext){
+	 *              @Override
+	 *              public boolean sendResult(GBDevice device) {
+	 *
+	 *                  //check if device has desired information etc. ...
+	 *
+	 *              }
+	 *         });
+	 *     }
+	 * </pre>
+	 */
+	private abstract class AsyncDeviceResult {
 
-        LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_QUIT");
+		protected final long timestamp;
+		protected final long timeout;
+		protected CallbackContext callbackContext;
+		protected final String description;
 
-      } else if (GBDevice.ACTION_DEVICE_CHANGED.equals(action)) {
+		public AsyncDeviceResult(CallbackContext callbackContext, String description) {
+			this(callbackContext, description, -1l);
+		}
 
-        final GBDevice device = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
-        if (LOG.isLoggable(LOG.DEBUG))
-          LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_DEVICE_CHANGED [task " + device.getBusyTask() + "| state " + device.getState() + "] -> " + device);
+		public AsyncDeviceResult(CallbackContext callbackContext, String description, long timeout) {
+			this.timestamp = System.currentTimeMillis();
+			this.timeout = timeout > 0 ? timeout : RESULT_TIMEOUT;
+			this.callbackContext = callbackContext;
+			this.description = description;
+		}
 
-        if (device != null) {
+		/**
+		 * Implementations should first check (efficiently!) if <code>device</code> contains
+		 * the needed information and if not, immediately return <code>false</code>.
+		 * <p>
+		 * If the <code>device</code> contains the information, a PluginResult can be sent
+		 * via <code>this.callbackContext</code>.
+		 * <p>
+		 * If the method returns <code>false</code>, the AsnycDeviceResult
+		 * was <strong>not</strong> consumed and should stay active
+		 * (e.g. no PluginResult was sent or callbackContext was kept open).
+		 *
+		 * @param device the device that was updated
+		 * @return true, if this AsyncDeviceResult was consumed
+		 */
+		abstract public boolean sendResult(GBDevice device);
+	}
 
-          _device = device;
+	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if (GBApplication.ACTION_QUIT.equals(action)) {
 
-          cordova.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
+				LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_QUIT");
 
-              synchronized (_pendingResultLock) {
-                if (_pendingResults.size() > 0) {
+			} else if (GBDevice.ACTION_DEVICE_CHANGED.equals(action)) {
 
-                  stopCheckPendingTimeout();
+				final GBDevice device = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
+				if (LOG.isLoggable(LOG.DEBUG))
+					LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_DEVICE_CHANGED [task " + device.getBusyTask() + "| state " + device.getState() + "] -> " + device);
 
-                  Iterator<AsyncDeviceResult> it = _pendingResults.iterator();
-                  AsyncDeviceResult asyncResult;
-                  long now = System.currentTimeMillis();
-                  while (it.hasNext()) {
-                    boolean timedOut = false;
-                    asyncResult = it.next();
-                    if (asyncResult.sendResult(device) || (timedOut = now - asyncResult.timestamp > asyncResult.timeout)) {
-                      if (timedOut) {
-                        doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
-                      }
-                      it.remove();
-                    }
-                  }
+				if (device != null) {
 
-                  startCheckPendingTimeout();
-                }
+					_device = device;
 
-              }//END: synchronized()
+					cordova.getThreadPool().execute(new Runnable() {
+						@Override
+						public void run() {
 
-            }//END: run(){...
+							synchronized (_pendingResultLock) {
+								if (_pendingResults.size() > 0) {
 
-          });//END: execute(...
+									stopCheckPendingTimeout();
 
+									Iterator<AsyncDeviceResult> it = _pendingResults.iterator();
+									AsyncDeviceResult asyncResult;
+									long now = System.currentTimeMillis();
+									while (it.hasNext()) {
+										boolean timedOut = false;
+										asyncResult = it.next();
+										if (asyncResult.sendResult(device) || (timedOut = now - asyncResult.timestamp > asyncResult.timeout)) {
+											if (timedOut) {
+												doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
+											}
+											it.remove();
+										}
+									}
+
+									startCheckPendingTimeout();
+								}
+
+							}//END: synchronized()
+
+						}//END: run(){...
+
+					});//END: execute(...
+
+				}
+			} else if (GB.ACTION_DISPLAY_MESSAGE.equals(action)) {
+				LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_DISPLAY_MESSAGE");
+				//				String message = intent.getStringExtra(GB.DISPLAY_MESSAGE_MESSAGE);
+				//				int severity = intent.getIntExtra(GB.DISPLAY_MESSAGE_SEVERITY, GB.INFO);
+				//				addMessage(message, severity);
+			}
+		}
+	};
+
+	private final BroadcastReceiver mButtonReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final String action = intent.getAction();
+			if(_buttonBroadcastName != null && _buttonBroadcastName.equals(action)){
+				LOG.d(PLUGIN_NAME, "BR.received notification: PREF_MIBAND_BUTTON_PRESS_BROADCAST");
+
+				//TEST
+				int id = 0;//<- FIXME create ID / get ID for current notification...?
+				GBApplication.deviceService().onDeleteNotification(id);
+
+				synchronized (_notificationRepeatTaskLock){
+					if(_notificationRepeatTask != null){
+						_notificationRepeatTask.cancel();
+						_notificationRepeatTask = null;
+					}
+				}
+			}
+		}
+	};
+
+
+	@Override
+	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+		super.initialize(cordova, webView);
+
+		_pendingResultTimeoutTimer = new Timer();
+		_buttonBroadcastName = SettingsUtil.getDefaultButtonPressValue(this.cordova.getActivity());
+
+		IntentFilter filter = new IntentFilter();
+		//		filter.addAction(GBApplication.ACTION_QUIT);
+		filter.addAction(GBDevice.ACTION_DEVICE_CHANGED);
+		//		filter.addAction(GB.ACTION_DISPLAY_MESSAGE);
+		LocalBroadcastManager.getInstance(cordova.getActivity()).registerReceiver(mReceiver, filter);
+
+		filter = new IntentFilter();
+		filter.addAction(_buttonBroadcastName);
+		cordova.getActivity().getApplicationContext().registerReceiver(mButtonReceiver, filter);
+
+		//		//TODO add a callable init-method -> check there, if it is run the first time
+		//		Prefs prefs = GBApplication.getPrefs();
+		//		if (prefs.getBoolean("firstrun", true)) {
+		//		prefs.getPreferences().edit().putBoolean("firstrun", false).apply();
+		//		Intent enableIntent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+		//		startActivity(enableIntent);
+
+		//		}
+
+		GBApplication.deviceService().start();
+		GBApplication.deviceService().requestDeviceInfo();
+	}
+
+	/**
+	 * @param action          the name of the "function" that was called by the JavaScript code
+	 * @param args            the arguments that were provided the JavaScript invocation (may be empty)
+	 * @param callbackContext the object for triggering the JavaScript's callback functions
+	 */
+	@Override
+	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
+
+		boolean isValidAction = true;
+
+		try {//FIXME DEBUG
+
+			LOG.i(PLUGIN_NAME + "_DEBUG", String.format("action '%s' with arguments: %s)", action, args.toString(2)));
+
+		} catch (Exception e) {
+		}
+
+
+		if (ACTION_IS_CONNECTED.equals(action)) {
+
+			this.isDeviceConnected(callbackContext);
+
+		} else if (ACTION_BATTERY_LEVEL.equals(action)) {
+
+			long timeout;
+
+			try {
+
+				if (args.length() > 0) {
+					timeout = args.getInt(0);
+				} else {
+					timeout = RESULT_TIMEOUT;
+				}
+
+
+			} catch (JSONException e) {
+
+				String errorMessage = "Invalid argument for timeout (using default instead): " + e;
+				LOG.e(PLUGIN_NAME, errorMessage, e);
+				timeout = RESULT_TIMEOUT;
+			}
+
+			this.getBatteryLevel(callbackContext, timeout);
+
+		} else if (ACTION_SYNCHRONIZE_DATA.equals(action)) {
+
+			long timeout;
+
+			try {
+
+				if (args.length() > 0) {
+					timeout = args.getInt(0);
+				} else {
+					timeout = 12 * RESULT_TIMEOUT;//data transfer could take long -> increased default timeout
+				}
+
+
+			} catch (JSONException e) {
+
+				String errorMessage = "Invalid argument for timeout (using default instead): " + e;
+				LOG.e(PLUGIN_NAME, errorMessage, e);
+				timeout = 12 * RESULT_TIMEOUT;//data transfer could take long -> increased default timeout
+			}
+
+			this.synchronizeData(callbackContext, timeout);
+
+		} else if (ACTION_RETRIEVE_DATA.equals(action)) {
+
+			int start = getInt(args, 0, 0);//default: starting at UNIX zero -> 1970 ...
+			int end = getInt(args, 1, toTimestamp(new Date()));//default: up to now
+
+			this.retrieveData(start, end, callbackContext);
+
+		} else if (ACTION_REMOVE_DATA.equals(action)) {
+
+			int start = getInt(args, 0, 0);//default: starting at UNIX zero -> 1970 ...
+			int end = getInt(args, 1, toTimestamp(new Date()));//default: up to now
+
+			this.removeData(start, end, callbackContext);
+
+		} else if (ACTION_DEVICE_INFO.equals(action)) {
+
+			this.getDeviceInfo(callbackContext);
+
+		} else if (ACTION_CONNECT.equals(action)) {
+
+			long timeout;
+
+			try {
+
+				if (args.length() > 0) {
+					timeout = args.getInt(0);
+				} else {
+					timeout = RESULT_TIMEOUT;
+				}
+
+
+			} catch (JSONException e) {
+
+				String errorMessage = "Invalid argument for timeout (using default instead): " + e;
+				LOG.e(PLUGIN_NAME, errorMessage, e);
+				timeout = RESULT_TIMEOUT;
+			}
+
+			this.connectDevice(callbackContext, timeout);
+
+		} else if (ACTION_FIRE_NOTIFICATION.equals(action)) {
+
+			//arg: message text /TODO: title, body (, sender?)
+			String message = getString(args, 0, null);
+
+      //(optional) arg: repeating alarms (DEFAULT: 3)
+      int repeat = getInt(args, 1, 3);
+
+			this.fireNotification(callbackContext, message, repeat);
+
+		} else if (ACTION_GET_CONFIG.equals(action)) {
+
+      LinkedList<String> names = null;
+      if(args.length() > 0){
+        Object obj = null;
+        try {
+
+          obj = args.get(0);
+          names = new LinkedList<String>();
+
+          if(obj instanceof String){
+            names.add((String) obj);
+          } else {
+            JSONArray list = (JSONArray) obj;
+            String name;
+            for(int i=0, size = list.length(); i < size; ++i){
+              name = getString(list, i, null);
+              if(name != null){
+                names.add(name);
+              }
+            }
+          }
+
+        } catch (JSONException e) {
+          LOG.e(PLUGIN_NAME, "get_config: could not evaluate arguments", e);
         }
-      } else if (GB.ACTION_DISPLAY_MESSAGE.equals(action)) {
-        LOG.d(PLUGIN_NAME, "BR.received notification: ACTION_DISPLAY_MESSAGE");
-//                String message = intent.getStringExtra(GB.DISPLAY_MESSAGE_MESSAGE);
-//                int severity = intent.getIntExtra(GB.DISPLAY_MESSAGE_SEVERITY, GB.INFO);
-//                addMessage(message, severity);
       }
-    }
-  };
+
+      JSONObject result = new JSONObject();
+      if(names == null || names.size() < 1){
+        for(Map.Entry<String, ?> e : SettingsUtil.getAll().entrySet()){
+          this.addToJson(result, e.getKey(), e.getValue());
+        }
+      } else {
+        //TODO use getPrefs() methods directly, instead of using map
+        Map<String, ?> settings = SettingsUtil.getAll();
+        for(String name : names){
+          this.addToJson(result, name, settings.get(name));
+        }
+      }
+
+      callbackContext.success(result);
+
+    } else if (ACTION_SET_CONFIG.equals(action)) {
 
 
-  @Override
-  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
-    super.initialize(cordova, webView);
+      if(args.length() < 2) {
 
-    _pendingResultTimeoutTimer = new Timer();
+        if(args.length() > 0){
+          try {
 
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(GBApplication.ACTION_QUIT);
-    filter.addAction(GBDevice.ACTION_DEVICE_CHANGED);
-    filter.addAction(GB.ACTION_DISPLAY_MESSAGE);
-    LocalBroadcastManager.getInstance(cordova.getActivity()).registerReceiver(mReceiver, filter);
+            Set<String> results = SettingsUtil.setPref(args.getJSONObject(0));
+            callbackContext.success(new JSONArray(results));
 
-//        //TODO add a callable init-method -> check there, if it is run the first time
-//        Prefs prefs = GBApplication.getPrefs();
-//        if (prefs.getBoolean("firstrun", true)) {
-//          prefs.getPreferences().edit().putBoolean("firstrun", false).apply();
-//          Intent enableIntent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
-//          startActivity(enableIntent);
-//
-//        }
-
-    GBApplication.deviceService().start();
-    GBApplication.deviceService().requestDeviceInfo();
-  }
-
-  /**
-   * @param action          the name of the "function" that was called by the JavaScript code
-   * @param args            the arguments that were provided the JavaScript invocation (may be empty)
-   * @param callbackContext the object for triggering the JavaScript's callback functions
-   */
-  @Override
-  public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-
-    boolean isValidAction = true;
-
-    try {//FIXME DEBUG
-
-      LOG.i(PLUGIN_NAME + "_DEBUG", String.format("action '%s' with arguments: %s)", action, args.toString(2)));
-
-    } catch (Exception e) {
-    }
-
-    if (ACTION_BATTERY_LEVEL.equals(action)) {
-
-      long timeout;
-
-      try {
-
-        if (args.length() > 0) {
-          timeout = args.getInt(0);
+          } catch (JSONException e) {
+            String msg = "set_config: could not evulate first argument as JSON object";
+            LOG.e(PLUGIN_NAME, msg, e);
+            callbackContext.error(msg);
+          }
         } else {
-          timeout = RESULT_TIMEOUT;
+          callbackContext.error("set_config: require 2 arguments, only encountered " + args.length());
         }
 
+      } else {
 
-      } catch (JSONException e) {
-
-        String errorMessage = "Invalid argument for timeout (using default instead): " + e;
-        LOG.e(PLUGIN_NAME, errorMessage, e);
-        timeout = RESULT_TIMEOUT;
-      }
-
-      this.getBatteryLevel(callbackContext, timeout);
-
-    } else if (ACTION_SYNCHRONIZE_DATA.equals(action)) {
-
-      long timeout;
-
-      try {
-
-        if (args.length() > 0) {
-          timeout = args.getInt(0);
+        String name = getString(args, 0, null);
+        if (name == null || name.length() < 1) {
+          callbackContext.error("set_config: invalid setting ID " + name);
         } else {
-          timeout = 12 * RESULT_TIMEOUT;//data transfer could take long -> increased default timeout
+
+          try {
+            Object val = args.get(1);
+            if(SettingsUtil.setPref(name, val)){
+              callbackContext.success(name);
+            } else {
+              callbackContext.error(String.format("failed to set %s to %s",name, val));
+            }
+          } catch (JSONException e) {
+            String msg = "Could not extract settings value at argument index 1";
+            LOG.e(PLUGIN_NAME, msg, e);
+            callbackContext.error(msg);
+          }
         }
 
-
-      } catch (JSONException e) {
-
-        String errorMessage = "Invalid argument for timeout (using default instead): " + e;
-        LOG.e(PLUGIN_NAME, errorMessage, e);
-        timeout = 12 * RESULT_TIMEOUT;//data transfer could take long -> increased default timeout
       }
 
-      this.synchronizeData(callbackContext, timeout);
+    } else if (ACTION_ADD_CONNECTION_LISTENER.equals(action)) {
 
-    } else if (ACTION_RETRIEVE_DATA.equals(action)) {
+			//(optional) arg: return full information on device upon connection changes (instead of just the state)
+			boolean fullInfo = getBool(args, 0, false);
+			this.addConnectionStateListener(callbackContext, fullInfo);
 
-      this.retrieveData(callbackContext);
+		} else if (ACTION_REMOVE_CONNECTION_LISTENER.equals(action)) {
 
-    } else {
+			this.removeConnectionStateListener(callbackContext);
+
+		} else {
 
 
-      if (!start(action, callbackContext)) {
-        isValidAction = false;
+			if (!start(action, callbackContext)) {
+				isValidAction = false;
+			}
+		}
+
+
+		return isValidAction;
+
+	}
+
+	private String getString(JSONArray args, int i, String defaultValue) {
+		if(args.length() > i){
+			try{
+				return args.getString(i);
+			} catch(Exception e){
+				LOG.e(PLUGIN_NAME, "Failed to extract String argument at "+i+": "+e.getLocalizedMessage(), e);
+			}
+		}
+		return defaultValue;
+	}
+
+  private boolean isString(JSONArray args, int i) {
+    if(args.length() > i){
+      try{
+        Object obj = args.getJSONObject(i);
+        return obj instanceof String;
+      } catch(Exception e){
+        LOG.e(PLUGIN_NAME, String.format("Could not access to extract String argument at %d as String: %s ", i, e.getLocalizedMessage()), e);
       }
     }
-
-    return isValidAction;
-
+    return false;
   }
 
-  @Override
-  public void onNewIntent(Intent intent) {
+	/**
+	 * HELPER extract argument as boolean from index i.
+	 *
+	 * @param args the arguments
+	 * @param i the index in args
+	 * @param defaultValue a default value, in case the there is no boolean value in args at i
+	 * @return defaultValue if there was a problem, otherwise the boolean-argument value
+	 */
+	private boolean getBool(JSONArray args, int i, boolean defaultValue) {
+		if(args.length() > i){
+			try{
+				return args.getBoolean(i);
+			} catch(Exception e){
+				LOG.e(PLUGIN_NAME, "Failed to extract boolean argument at "+i+": "+e.getLocalizedMessage(), e);
+			}
+		}
+		return defaultValue;
+	}
 
-    LOG.d(PLUGIN_NAME, "onNewIntent: " + intent);//DEBUG
+	/**
+	 * HELPER extract argument as int from index i.
+	 *
+	 * @param args the arguments
+	 * @param i the index in args
+	 * @param defaultValue a default value, in case the there is no int value in args at i
+	 * @return defaultValue if there was a problem, otherwise the int-argument value
+	 */
+	private int getInt(JSONArray args, int i, int defaultValue) {
+		if(args.length() > i){
+			try{
+				return args.getInt(i);
+			} catch(Exception e){
+				LOG.e(PLUGIN_NAME, "Failed to extract int argument at "+i+": "+e.getLocalizedMessage(), e);
+			}
+		}
+		return defaultValue;
+	}
 
-    super.onNewIntent(intent);
-  }
+	@Override
+	public void onNewIntent(Intent intent) {
 
-  /**
-   * Handels invocation of views/activities in the Gadgetbridge app.
-   *
-   * @param target          the class name of the targeted view/activity
-   * @param callbackContext the callback context for sending the plugin result
-   * @return TRUE if there is a valid action for <code>target</code>
-   */
-  protected boolean start(final String target, final CallbackContext callbackContext) {
+		LOG.d(PLUGIN_NAME, "onNewIntent: " + intent);//DEBUG
 
-    Class targetCl;
-    GBDevice device = null;
-    Alarm alarm = null;
+		super.onNewIntent(intent);
+	}
 
-    if (target.equals(ACTION_START_CONTROL_CENTER)) {
-      targetCl = ControlCenterv2.class;
+	/**
+	 * Handels invocation of views/activities in the Gadgetbridge app.
+	 *
+	 * @param target          the class name of the targeted view/activity
+	 * @param callbackContext the callback context for sending the plugin result
+	 * @return TRUE if there is a valid action for <code>target</code>
+	 */
+	protected boolean start(final String target, final CallbackContext callbackContext) {
 
-    } else if (target.equals(ACTION_START_SETTINGS)) {
-      targetCl = SettingsActivity.class;
+		Class targetCl;
+		GBDevice device = null;
+		Alarm alarm = null;
 
-    } else if (target.equals(ACTION_START_MI_BAND_SETTINGS)) {
-      targetCl = MiBandPreferencesActivity.class;
+		if (target.equals(ACTION_START_CONTROL_CENTER)) {
+			targetCl = ControlCenterv2.class;
 
-    } else if (target.equals(ACTION_START_BLACKLIST)) {
-      targetCl = AppBlacklistActivity.class;
+		} else if (target.equals(ACTION_START_SETTINGS)) {
+			targetCl = SettingsActivity.class;
 
-    } else if (target.equals(ACTION_START_DEBUG)) {
-      targetCl = DebugActivity.class;
+		} else if (target.equals(ACTION_START_MI_BAND_SETTINGS)) {
+			targetCl = MiBandPreferencesActivity.class;
 
-    } else if (target.equals(ACTION_START_DB_MANAGEMENT)) {
-      targetCl = DbManagementActivity.class;
+		} else if (target.equals(ACTION_START_BLACKLIST)) {
+			targetCl = AppBlacklistActivity.class;
 
-    } else if (target.equals(ACTION_START_DISCOVERY)) {
-      targetCl = DiscoveryActivity.class;
+		} else if (target.equals(ACTION_START_DEBUG)) {
+			targetCl = DebugActivity.class;
 
-    } else if (target.equals(ACTION_START_PARING)) {
-      targetCl = MiBandPairingActivity.class;
+		} else if (target.equals(ACTION_START_DB_MANAGEMENT)) {
+			targetCl = DbManagementActivity.class;
 
-    } else if (target.equals(ACTION_START_ALARMS)) {
-      targetCl = ConfigureAlarms.class;
+		} else if (target.equals(ACTION_START_DISCOVERY)) {
+			targetCl = DiscoveryActivity.class;
 
-    } else if (target.equals(ACTION_START_CHARTS)) {
-      targetCl = ChartsActivity.class;
-      device = getDevice();
+		} else if (target.equals(ACTION_START_PARING)) {
+			targetCl = MiBandPairingActivity.class;
 
-      if (device == null) {
+		} else if (target.equals(ACTION_START_ALARMS)) {
+			targetCl = ConfigureAlarms.class;
 
-        targetCl = null;
+		} else if (target.equals(ACTION_START_CHARTS)) {
+			targetCl = ChartsActivity.class;
+			device = getDevice();
 
-        String msg = "Could not start activity \"" + target + "\": ";
-        doSendNoDeviceError(callbackContext, msg);
+			if (device == null) {
 
-        return true;////////////// EARLY EXIT ////////////////////////
-      }
+				targetCl = null;
 
-    }
-//        else if (target.equals(ACTION_START_ALARM)) {
-//            targetCl = AlarmDetails.class;
-//
-//            //avoidSendAlarmsToDevice = true;
-//            intent.putExtra("alarm", alarm);
-//            intent.putExtra(GBDevice.EXTRA_DEVICE, getDevice());
-//            //startActivityForResult(startIntent, REQ_CONFIGURE_ALARM);
-//
-//
-//        }
-    else {
-      targetCl = null;
-    }
+				String msg = "Could not start activity \"" + target + "\": ";
+				doSendNoDeviceError(callbackContext, msg);
 
-    if (targetCl == null) {
-      String msg = "Requested unknown activity for starting: '" + target + "'";
-      LOG.e(PLUGIN_NAME, msg);
-      callbackContext.error(msg);//TODO send errorCode / normalize error?
-      return false;////////////// EARLY EXIT ////////////////////////
-    }
+				return true;////////////// EARLY EXIT ////////////////////////
+			}
 
+		}
+		//		else if (target.equals(ACTION_START_ALARM)) {
+		//		targetCl = AlarmDetails.class;
+
+		//		//avoidSendAlarmsToDevice = true;
+		//		intent.putExtra("alarm", alarm);
+		//		intent.putExtra(GBDevice.EXTRA_DEVICE, getDevice());
+		//		//startActivityForResult(startIntent, REQ_CONFIGURE_ALARM);
+
+
+		//		}
+		else {
+			targetCl = null;
+		}
+
+		if (targetCl == null) {
+			String msg = "Requested unknown activity for starting: '" + target + "'";
+			LOG.e(PLUGIN_NAME, msg);
+			callbackContext.error(msg);//TODO send errorCode / normalize error?
+			return false;////////////// EARLY EXIT ////////////////////////
+		}
+
+		try {
+
+			Intent intent = new Intent(this.cordova.getActivity(), targetCl);
+			if (device != null) {
+				intent.putExtra(GBDevice.EXTRA_DEVICE, device);
+			}
+			if (alarm != null) {
+				intent.putExtra("alarm", alarm);
+			}
+
+			this.cordova.getActivity().startActivity(intent);
+			callbackContext.success();
+
+		} catch (Exception exc) {
+			String msg = "Could not start activity \"" + target + "\"";
+			LOG.e(PLUGIN_NAME, msg, exc);
+			callbackContext.error(msg + ": " + exc);//TODO send errorCode / normalize error?
+		}
+
+		return true;
+	}
+
+	protected void isDeviceConnected(CallbackContext callbackContext) {
+
+		GBDevice d = getDevice();
+		if (d != null) {
+
+			boolean connected = GBDevice.State.INITIALIZED.equals(d.getState());
+			PluginResult result = new PluginResult(PluginResult.Status.OK, connected);
+			callbackContext.sendPluginResult(result);
+
+		} else {
+			doSendNoDeviceError(callbackContext, "Could check connection");
+		}
+
+	}
+
+	protected void getDeviceInfo(CallbackContext callbackContext) {
+		GBDevice device = getDevice();
+		if (device != null) {
+			PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(device, DeviceInfoType.INFO));
+			callbackContext.sendPluginResult(result);
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not get device info");
+		}
+	}
+
+	protected void addConnectionStateListener(CallbackContext callbackContext, final boolean allStatusChanges) {
+
+		GBDevice _device = getDevice();
+		if (_device != null) {
+
+
+			PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(_device, DeviceInfoType.CONNECTION_STATE));
+			result.setKeepCallback(true);
+			callbackContext.sendPluginResult(result);
+
+			final long timeout = Long.MAX_VALUE;
+			final GBDevice.State _state = _device.getState();
+			synchronized (_pendingResultLock) {
+
+				//TODO re-use AsyncDeviceResult, if multiple listeners are registered:
+				//      * make extended AsyncDeviceResult class that maintains a list of CallbackContext
+				//      * check, if _pendingResults has an entry for TASK_CONNECTION_STATE_LISTENER
+				//      * add callbackContext to its list of callbacks
+
+				//register callback, listening to changes in the GBDevice
+				_pendingResults.add(new AsyncDeviceResult(callbackContext, TASK_CONNECTION_STATE_LISTENER, timeout) {
+
+					private GBDevice.State prevState = _state;
+
+					@Override
+					public boolean sendResult(GBDevice device) {
+
+						final GBDevice.State state = device.getState();
+
+						if(!allStatusChanges && (!GBDevice.State.NOT_CONNECTED.equals(state) || !GBDevice.State.INITIALIZED.equals(state))){
+							//if not all connection-status changes should be reported: ignore all changes other than not-connected & initialized (i.e. "fully-connected")
+							return false;//<- FALSE, so that this "listener" is kept in _pendingResults list
+						}
+
+						LOG.d(PLUGIN_NAME, "ASYNC connection state changed: " + device.getState().toString());//DEBUG
+
+						if (!this.prevState.equals(state)) {
+
+							PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(device, DeviceInfoType.CONNECTION_STATE));
+							result.setKeepCallback(true);
+							callbackContext.sendPluginResult(result);
+						}
+
+						//do not remove this "listener" from _pendingResults:
+						return false;
+					}
+				});
+			}
+
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not get device info");
+		}
+
+	}
+
+	protected void removeConnectionStateListener(CallbackContext callbackContext) {
+
+		boolean removed = false;
+		synchronized (_pendingResultLock) {
+
+			Iterator<AsyncDeviceResult> it = _pendingResults.iterator();
+			AsyncDeviceResult asyncResult;
+			while (it.hasNext()) {
+				asyncResult = it.next();
+				if(TASK_CONNECTION_STATE_LISTENER.equals(asyncResult.description)){
+					it.remove();
+					removed = true;
+					break;
+				}
+			}
+		}
+
+		callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, removed));
+	}
+
+	protected void connectDevice(CallbackContext callbackContext, long timeout) {
+
+		GBDevice d = getDevice();
+		if (d != null) {
+
+			if (d.isBusy()) {
+				//TODO should this be queued instead of triggering an error here?
+				callbackContext.error("device busy: '" + d.getBusyTask() + "'");
+				return;///////////////////// EARLY EXIT /////////////////////
+			}
+
+			if (d.isInitialized()) {
+				callbackContext.success();
+			} else {
+
+				synchronized (_pendingResultLock) {
+
+					//register callback, listening to changes in the GBDevice
+					_pendingResults.add(new AsyncDeviceResult(callbackContext, TASK_CONNECTING_DEVICE, timeout) {
+						@Override
+						public boolean sendResult(GBDevice device) {
+							LOG.d(PLUGIN_NAME, "ASYNC connecting: " + device.getStateString());//DEBUG
+							boolean fullyConnected = device.isInitialized();
+							if (fullyConnected) {
+								this.callbackContext.success();
+								return true;
+							} else {
+								return false;
+							}
+						}
+					});
+				}
+
+				if (GBDevice.State.NOT_CONNECTED.equals(d.getState())) {
+					GBApplication.deviceService().connect(d);
+				}
+				GBApplication.deviceService().requestDeviceInfo();
+
+			}
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not connect");
+		}
+
+	}
+
+	protected void getBatteryLevel(CallbackContext callbackContext, long timeout) {
+
+		GBDevice d = getDevice();
+		if (d != null) {
+
+			if (d.isBusy()) {
+				//TODO should this be queued instead of triggering an error here?
+				callbackContext.error("device busy: '" + d.getBusyTask() + "'");
+				return;///////////////////// EARLY EXIT /////////////////////
+			}
+
+			if (d.isConnected()) {
+				callbackContext.success(d.getBatteryLevel());
+			} else {
+
+				synchronized (_pendingResultLock) {
+
+					//register callback, listening to changes in the GBDevice
+					_pendingResults.add(new AsyncDeviceResult(callbackContext, TASK_BATTERY_LEVEL, timeout) {
+						@Override
+						public boolean sendResult(GBDevice device) {
+							int level = device.getBatteryLevel();
+							LOG.d(PLUGIN_NAME, "ASYNC device battery: " + level);//DEBUG
+							if (level != -1) {
+								this.callbackContext.success(level);
+								return true;
+							} else {
+								return false;
+							}
+						}
+					});
+				}
+
+				if (GBDevice.State.NOT_CONNECTED.equals(d.getState())) {
+					GBApplication.deviceService().connect(d);
+				}
+				GBApplication.deviceService().requestDeviceInfo();
+
+			}
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not determine battery level.");
+		}
+
+	}
+
+	protected void fireNotification(CallbackContext callbackContext, String message, int repeat) {
+
+		GBDevice d = getDevice();
+		if (d != null) {
+
+			if (d.isBusy()) {
+				//TODO should this be queued instead of triggering an error here?
+				callbackContext.error("device busy: '" + d.getBusyTask() + "'");
+				return;///////////////////// EARLY EXIT /////////////////////
+			}
+
+			if (d.isConnected()) {
+
+				//NotificationType.GENERIC_EMAIL | GENERIC_SMS:
+				// sender + subject + body
+				//NotificationType.GENERIC_ALARM_CLOCK:
+				// title | subject
+				//NotificationType.GENERIC_NAVIGATION:
+				// title | body
+				//else:
+				// body
+				//
+				// custom: NotificationType.GENERIC_TEXT_ONLY_MESSAGE:
+				//   title | subject
+
+				final CallbackContext cb = callbackContext;
+				final String msg = message;
+				final int loops = repeat;
+
+
+				synchronized (_notificationRepeatTaskLock){
+
+					if(_notificationRepeatTask != null){
+						_notificationRepeatTask.cancel();
+					}
+
+					_notificationRepeatTask = new TimerTask() {
+
+						private int count = 0;
+						@Override
+						public void run() {
+
+							NotificationSpec notification = new NotificationSpec();
+
+							notification.title = msg;
+							//notification.subject = msg;
+							notification.type = count == 0? NotificationType.GENERIC_ALARM_CLOCK : NotificationType.GENERIC_TEXT_ONLY_MESSAGE;
+
+							GBApplication.deviceService().onNotification(notification);
+
+							LOG.d(PLUGIN_NAME, String.format("fireNotification: repeating notification (%s / %d): '%s' ", count+1, loops, msg));
+
+							if(++count == loops){
+								this.cancel();
+							}
+						}
+
+						@Override
+						public boolean cancel(){
+							LOG.d(PLUGIN_NAME, String.format("CANCEL fireNotification: repeated notification (%s / %d): '%s' ", count, loops, msg));
+							cb.success();
+							_notificationRepeatTask = null;
+							return super.cancel();
+						}
+					};
+				}
+
+				//FIXME
+				_pendingResultTimeoutTimer.schedule(_notificationRepeatTask, 0, NOTIFICATION_REPEAT_DELAY);
+
+			} else {
+				callbackContext.error("Could not fire notification: Not connected.");
+			}
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not fire notification.");
+		}
+
+	}
+
+	protected void synchronizeData(CallbackContext callbackContext, long timeout) {
+
+		GBDevice d = getDevice();
+		if (d != null) {
+
+			if (d.isBusy()) {
+				//TODO should this be queued instead of triggering an error here?
+				callbackContext.error("device busy: '" + d.getBusyTask() + "'");
+				return;///////////////////// EARLY EXIT /////////////////////
+			}
+
+			boolean isConnecting = !d.isInitialized();
+			if (GBDevice.State.NOT_CONNECTED.equals(d.getState())) {
+				//any other state of NOT_CONNECTED means, that the device is in the process of connecting (or is connected)
+				GBApplication.deviceService().connect(d);
+			}
+
+			GBApplication.deviceService().onFetchActivityData();
+			final String taskDesc = d.getBusyTask();
+			synchronized (_pendingResultLock) {
+
+				//if there is a busy-task set -> start listing to when the busy-task is reset again
+				//				if(taskDesc != null) {
+
+				final boolean checkConnecting = isConnecting;
+
+				//register callback, listening to changes in the GBDevice & its busy-task
+				_pendingResults.add(new AsyncDeviceResult(callbackContext, TASK_SYNCHRONIZE_DATA, timeout) {
+
+					private boolean _isCheckConnecting = checkConnecting;//if need to wait for connection first
+					private boolean _isSettingTaskName = false;
+					private boolean _isSyncStarted = false;
+					private String _taskName = taskDesc;//<- NULL, if waiting for connection (will be set after connecting)
+
+					@Override
+					public boolean sendResult(GBDevice device) {
+
+						String syncTaskName = SettingsUtil.getSyncTaskName(cordova.getActivity());
+
+						if (_isCheckConnecting || _taskName == null) {
+							if (device.isInitialized()) {
+								LOG.d(PLUGIN_NAME, "ASYNC synchronize data: connected, starting to sync... ");//DEBUG
+								_isCheckConnecting = false;
+
+								if (_taskName == null) {
+
+									String taskName = device.getBusyTask();
+									if (syncTaskName.length() > 0) {
+										if (syncTaskName.equals(taskName)) {
+											_taskName = taskName;
+											_isSyncStarted = true;
+										}
+									} else if (taskName != null) {
+										_isSyncStarted = true;
+										//in case we do not know the name for  the sync-task:
+										// use heuristic that the first non-null name is the sync-task name
+										if (_taskName == null) {
+											//actually try to use the task-name from next cycle:
+											_isSettingTaskName = false;
+										}
+										_taskName = taskName;
+									}
+									LOG.d(PLUGIN_NAME, "ASYNC synchronize data: set task to '" + _taskName + "' (1)... ");//DEBUG
+								} else
+									LOG.d(PLUGIN_NAME, "ASYNC synchronize data: continuing with task '" + _taskName + "'... ");//DEBUG
+							} else
+								LOG.d(PLUGIN_NAME, "ASYNC synchronize data: connecting... ");//DEBUG
+
+							return false;//<- continue listening (for end of sync-task)
+
+						} else {
+
+							String taskName = device.getBusyTask();
+							if (_isSettingTaskName && taskName != null) {
+								_taskName = taskName;
+								LOG.d(PLUGIN_NAME, "ASYNC synchronize data: set task to '" + _taskName + "' (2)... ");//DEBUG
+							}
+
+							if (_taskName == null) {
+								LOG.e(PLUGIN_NAME, "ASYNC synchronize data: invalid sync state: should have busy-task set, but is NULL ", device);//DEBUG
+								this.callbackContext.error("invalid sync state: should have busy-task set, but is NULL");//FIXME normalize error
+								return true;//<- remove this from pending task list
+							}
+
+							LOG.d(PLUGIN_NAME, "ASYNC synchronize data: " + device.getBusyTask());//DEBUG
+							if (!_taskName.equals(device.getBusyTask())) {
+								this.callbackContext.success();//TODO send timestamp of last activity-data sample?
+								return true;
+							} else {
+								return false;
+							}
+						}
+
+					}
+				});
+			}
+
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not start data synchronization.");
+		}
+
+	}
+
+
+	protected AsyncTask refreshTask;
+
+	protected void retrieveData(int start, int end, CallbackContext callbackContext) {
+		GBDevice device = getDevice();
+		if (device != null) {
+
+			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
+				return;
+			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
+				refreshTask.cancel(true);//TODO should this be really canceled?
+			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
+				return;
+			}
+
+			refreshTask = new DataRetrievalTask(TASK_RETRIEVING_DATA, start, end, cordova.getActivity(), callbackContext).execute();
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not retrieve data");
+		}
+	}
+
+	protected class DataRetrievalTask extends DBAccess {
+
+		private CallbackContext callbackContext;
+		private List<? extends ActivitySample> samples;
+
+		private int start;
+		private int end;
+
+		public DataRetrievalTask(String task, int startTimestamp, int endTimestamp, Context context, CallbackContext callbackContext) {
+			super(task, context);
+			this.start = startTimestamp;
+			this.end = endTimestamp;
+			this.callbackContext = callbackContext;
+		}
+
+		@Override
+		protected void doInBackground(DBHandler db) {
+			GBDevice device = getDevice();
+			if (device != null) {
+				DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
+				SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, db.getDaoSession());
+
+				samples = provider.getAllActivitySamples(start, end);
+
+			} else {
+				cancel(true);
+				doSendNoDeviceError(callbackContext, "Could not retrieve data.");
+			}
+		}
+
+		@Override
+		protected void onPostExecute(Object o) {
+			super.onPostExecute(o);
+			Activity activity = cordova.getActivity();
+			if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+				if (samples != null) {
+					JSONArray result = toJson(samples);
+					callbackContext.success(result);
+				} else {
+					callbackContext.error("no samples");//TODO should this really be an error, or should no-samples be a valid response?
+				}
+			} else {
+				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
+			}
+		}
+
+		private JSONArray toJson(List<? extends ActivitySample> list) {
+			JSONArray l = new JSONArray();
+			for (ActivitySample s : list) {
+				try {
+					JSONObject data = toJson(s);
+					l.put(data);
+				} catch (JSONException e) {
+					LOG.e(PLUGIN_NAME, "Failed to create JSONObject for sample", e);
+				}
+			}
+			return l;
+		}
+
+		private JSONObject toJson(ActivitySample sample) throws JSONException {
+			JSONObject o = new JSONObject();
+
+			//			public static final int TYPE_NOT_MEASURED = -1;
+			//			public static final int TYPE_UNKNOWN = 0;
+			//			public static final int TYPE_ACTIVITY = 1;
+			//			public static final int TYPE_LIGHT_SLEEP = 2;
+			//			public static final int TYPE_DEEP_SLEEP = 4;
+			//			public static final int TYPE_NOT_WORN = 8;
+			int kind = sample.getKind();
+			int timestamp = sample.getTimestamp();
+			switch (kind) {
+			case -1://TYPE_NOT_MEASURED
+				LOG.w(PLUGIN_NAME, "sample NOT_MEASURED at " + timestamp);
+				return null;////////////// EARLY EXIT ////////////////
+			case 0://TYPE_UNKNOWN
+				LOG.w(PLUGIN_NAME, "sample has UNKNOWN_TYPE at " + timestamp);
+				break;
+			case 1://TYPE_ACTIVITY
+				o.put(FIELD_ACTIVITY, (double) sample.getIntensity());
+				break;
+			case 2://TYPE_LIGHT_SLEEP
+				o.put(FIELD_LIGHT_SLEEP, sample.getIntensity());
+				break;
+			case 4://TYPE_LIGHT_DEEP
+				o.put(FIELD_DEEP_SLEEP, sample.getIntensity());
+				break;
+			case 8://TYPE_NOT_WORN
+				o.put(FIELD_NOT_WORN, true);
+				break;
+			}
+
+			o.put(FIELD_RAW_INTENSITY, sample.getRawIntensity());
+
+			o.put(FIELD_TIMESTAMP, timestamp);
+
+			int steps = sample.getSteps();
+			if (steps > 0) {
+				o.put(FIELD_STEPS, steps);
+			}
+
+			int heartRate = sample.getHeartRate();
+			if (heartRate > 0 && heartRate < 255) {
+				o.put(FIELD_HEART_RATE, heartRate);
+			}
+
+			return o;
+		}
+	}
+
+	protected AsyncTask removeTask;
+
+	protected void removeData(int start, int end, CallbackContext callbackContext) {
+		GBDevice device = getDevice();
+		if (device != null) {
+
+			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
+				return;
+			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data retrieval task is in progress");//TODO should this really be an error?
+				return;
+			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
+				return;
+			}
+
+			removeTask = new DataRemovalTask(TASK_REMOVING_DATA, start, end, cordova.getActivity(), callbackContext).execute();
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not remove data");
+		}
+	}
+
+	protected class DataRemovalTask extends DBAccess {
+
+		private CallbackContext callbackContext;
+
+		private int start;
+		private int end;
+
+		private boolean errorsOccurred;
+
+		public DataRemovalTask(String task, int startTimestamp, int endTimestamp, Context context, CallbackContext callbackContext) {
+			super(task, context);
+			this.errorsOccurred = false;
+			this.start = startTimestamp;
+			this.end = endTimestamp;
+			this.callbackContext = callbackContext;
+		}
+
+		@Override
+		protected void doInBackground(DBHandler db) {
+			GBDevice device = getDevice();
+			if (device != null) {
+				DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
+				SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, db.getDaoSession());
+
+				List<? extends ActivitySample> samples = provider.getAllActivitySamples(start, end);
+
+				if(samples != null) {
+					for (ActivitySample s : samples) {
+						try {
+							((MiBandActivitySample) s).delete();
+						} catch (Exception e) {
+							//TODO "log" errors, and send in plugin result?
+							LOG.e(PLUGIN_NAME, "ERROR while removing sample from Db " + s, e);
+						}
+					}
+				}
+
+			} else {
+				cancel(true);
+				doSendNoDeviceError(callbackContext, "Could not access data.");
+			}
+		}
+
+		@Override
+		protected void onPostExecute(Object o) {
+			super.onPostExecute(o);
+			Activity activity = cordova.getActivity();
+			if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+				if (!errorsOccurred) {
+					callbackContext.success();
+				} else {
+					callbackContext.error("error while removing samples");//TODO should this be more detailed? e.g. count of errors, or list of timestamps?
+				}
+			} else {
+				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
+			}
+		}
+	}
+
+	protected AsyncTask insertTask;
+
+	protected void insertData(JSONArray args, CallbackContext callbackContext) {
+		GBDevice device = getDevice();
+		if (device != null) {
+
+			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
+				return;
+			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data retrieval task is in progress");//TODO should this really be an error?
+				return;
+			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
+				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
+				return;
+			}
+
+			insertTask = new DataInsertionTask(TASK_INSERTING_DATA, args, cordova.getActivity(), callbackContext).execute();
+		} else {
+			doSendNoDeviceError(callbackContext, "Could not retrieve data");
+		}
+	}
+
+	protected class DataInsertionTask extends DBAccess {
+
+		private CallbackContext callbackContext;
+
+		private JSONArray data;
+		private boolean success;
+
+		public DataInsertionTask(String task, JSONArray args, Context context, CallbackContext callbackContext) {
+			super(task, context);
+			this.success = false;
+			this.data = args;
+			this.callbackContext = callbackContext;
+		}
+
+		@Override
+		protected void doInBackground(DBHandler db) {
+			GBDevice gbDevice = getDevice();
+			if (gbDevice != null) {
+
+				try {
+
+					//insertion adapted from: nodomain.freeyourgadget.gadgetbridge.service.devices.miband2.operations.FetchActivityOperation
+					DBHandler handler = GBApplication.acquireDB();
+
+					DaoSession session = handler.getDaoSession();
+					SampleProvider<MiBandActivitySample> sampleProvider = new MiBandSampleProvider(getDevice(), session);
+					Device device = DBHelper.getDevice(gbDevice, session);
+					User user = DBHelper.getUser(session);
+
+					int size = this.data.length();
+					MiBandActivitySample[] samples = new MiBandActivitySample[size];
+
+					for (int i=0; i < size; ++i) {
+
+						JSONObject data = this.data.getJSONObject(i);
+						MiBandActivitySample sample = sampleProvider.createActivitySample();
+
+						sample.setDevice(device);
+						sample.setUser(user);
+						sample.setTimestamp(data.getInt(FIELD_TIMESTAMP));
+						sample.setProvider(sampleProvider);
+
+						sample.setRawKind(MiBandSampleProvider.TYPE_ACTIVITY);
+
+						if(data.has(FIELD_RAW_INTENSITY)){
+							sample.setRawIntensity(data.getInt(FIELD_RAW_INTENSITY));
+						}
+
+						if(data.has(FIELD_ACTIVITY) || data.has(FIELD_LIGHT_SLEEP) || data.has(FIELD_DEEP_SLEEP)){
+
+							double value;//<- FIXME TEST remove after test
+							if(data.has(FIELD_ACTIVITY)){
+								value = data.getDouble(FIELD_ACTIVITY);
+								sample.setRawKind(MiBandSampleProvider.TYPE_ACTIVITY);
+							} else if(data.has(FIELD_LIGHT_SLEEP)){
+								value = data.getDouble(FIELD_LIGHT_SLEEP);
+								sample.setRawKind(MiBandSampleProvider.TYPE_LIGHT_SLEEP);
+							} else {//if(data.has(FIELD_DEEP_SLEEP)){
+								value = data.getDouble(FIELD_DEEP_SLEEP);
+								sample.setRawKind(MiBandSampleProvider.TYPE_DEEP_SLEEP);
+							}
+
+							//added extra field FIELD_RAW_INTENSITY instead of "reverse engineering" the value
+							//              //HACK need to reverse AbstractMiBandSampleProvider.normalizeIntensity() which is used in getIntensity(): do mult by 180
+							//              sample.setRawIntensity((int)(value * 180.0d));
+							//FIXME TEST:
+							int converted = (int)(value * 180.0d);
+							int raw = sample.getRawIntensity();
+							LOG.i(PLUGIN_NAME, String.format("TEST: intensity to raw: %s (raw: %d | converted: %d)", converted == raw, raw, converted));
+						}
+
+						if(data.has(FIELD_NOT_WORN)){
+							sample.setRawKind(MiBandSampleProvider.TYPE_NONWEAR);
+						}
+
+						if(data.has(FIELD_STEPS)){
+							sample.setSteps(data.getInt(FIELD_STEPS));
+						}
+
+						if(data.has(FIELD_HEART_RATE)){
+							sample.setHeartRate(data.getInt(FIELD_HEART_RATE));
+						}
+
+						samples[i] = sample;
+
+						//            if (LOG.isDebugEnabled()) {
+						////                        LOG.debug("sample: " + sample);
+						//            }
+					}
+
+					sampleProvider.addGBActivitySamples(samples);
+					this.success = true;
+
+				} catch (Exception ex) {
+					//          GB.toast(getContext(), "Error saving activity samples", Toast.LENGTH_LONG, GB.ERROR);
+					LOG.e(PLUGIN_NAME, "Could not insert data", ex);
+					cancel(true);
+					callbackContext.error("Could not insert data.");
+				}
+
+
+			} else {
+				cancel(true);
+				doSendNoDeviceError(callbackContext, "Could not insert data.");
+			}
+		}
+
+		@Override
+		protected void onPostExecute(Object o) {
+			super.onPostExecute(o);
+			Activity activity = cordova.getActivity();
+			if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+				if (this.success) {
+					callbackContext.success();
+				} else {
+					callbackContext.error("errors occured while adding samples");//TODO should this more detailed?
+				}
+			} else {
+				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
+			}
+		}
+
+	}
+
+  private JSONObject addToJson(JSONObject obj, String name, Object value) {
     try {
 
-      Intent intent = new Intent(this.cordova.getActivity(), targetCl);
-      if (device != null) {
-        intent.putExtra(GBDevice.EXTRA_DEVICE, device);
-      }
-      if (alarm != null) {
-        intent.putExtra("alarm", alarm);
-      }
+      if(value instanceof Collection){
 
-      this.cordova.getActivity().startActivity(intent);
-      callbackContext.success();
-
-    } catch (Exception exc) {
-      String msg = "Could not start activity \"" + target + "\"";
-      LOG.e(PLUGIN_NAME, msg, exc);
-      callbackContext.error(msg + ": " + exc);//TODO send errorCode / normalize error?
-    }
-
-    return true;
-  }
-
-  protected void getBatteryLevel(CallbackContext callbackContext, long timeout) {
-
-    GBDevice d = getDevice();
-    if (d != null) {
-
-      if (d.isBusy()) {
-        //TODO should this be queued instead of triggering an error here?
-        callbackContext.error("device busy: '" + d.getBusyTask() + "'");
-        return;///////////////////// EARLY EXIT /////////////////////
-      }
-
-      if (d.isConnected()) {
-        callbackContext.success(d.getBatteryLevel());
-      } else {
-
-        synchronized (_pendingResultLock) {
-
-          //register callback, listening to changes in the GBDevice
-          _pendingResults.add(new AsyncDeviceResult(callbackContext, "Battery Level", timeout) {
-            @Override
-            public boolean sendResult(GBDevice device) {
-              int level = device.getBatteryLevel();
-              LOG.d(PLUGIN_NAME, "ASYNC device battery: " + level);//DEBUG
-              if (level != -1) {
-                this.callbackContext.success(level);
-                return true;
-              } else {
-                return false;
-              }
-            }
-          });
+        //TODO support array-type recursively?
+        JSONArray list = new JSONArray();
+        Iterator it = ((Collection)value).iterator();
+        while(it.hasNext()){
+          list.put(it.next());
         }
-
-        if (GBDevice.State.NOT_CONNECTED.equals(d.getState())) {
-          GBApplication.deviceService().connect(d);
-        }
-        GBApplication.deviceService().requestDeviceInfo();
-
-      }
-    } else {
-      doSendNoDeviceError(callbackContext, "Could not determine battery level.");
-    }
-
-  }
-
-  protected void synchronizeData(CallbackContext callbackContext, long timeout) {
-
-    GBDevice d = getDevice();
-    if (d != null) {
-
-      if (d.isBusy()) {
-        //TODO should this be queued instead of triggering an error here?
-        callbackContext.error("device busy: '" + d.getBusyTask() + "'");
-        return;///////////////////// EARLY EXIT /////////////////////
-      }
-
-      boolean isConnecting = !d.isInitialized();
-      if (GBDevice.State.NOT_CONNECTED.equals(d.getState())) {
-        //any other state of NOT_CONNECTED means, that the device is in the process of connecting (or is connected)
-        GBApplication.deviceService().connect(d);
-      }
-
-      GBApplication.deviceService().onFetchActivityData();
-      final String taskDesc = d.getBusyTask();
-      synchronized (_pendingResultLock) {
-
-        //if there is a busy-task set -> start listing to when the busy-task is reset again
-//            if(taskDesc != null) {
-
-        final boolean checkConnecting = isConnecting;
-
-        //register callback, listening to changes in the GBDevice & its busy-task
-        _pendingResults.add(new AsyncDeviceResult(callbackContext, "Synchronize Data", timeout) {
-
-          private boolean _isCheckConnecting = checkConnecting;//if need to wait for connection first
-          private boolean _isSettingTaskName = false;
-          private boolean _isSyncStarted = false;
-          private String _taskName = taskDesc;//<- NULL, if waiting for connection (will be set after connecting)
-
-          @Override
-          public boolean sendResult(GBDevice device) {
-
-            String syncTaskName = getSyncTaskName();
-
-            if (_isCheckConnecting || _taskName == null) {
-              if (device.isInitialized()) {
-                LOG.d(PLUGIN_NAME, "ASYNC synchronize data: connected, starting to sync... ");//DEBUG
-                _isCheckConnecting = false;
-
-                if (_taskName == null) {
-//                          _taskName = device.getBusyTask();
-//                          if(_taskName == null){
-//                            //set marker, that we should try to retrieve task-name in next update
-//                            _isSettingTaskName = true;
-//                          }
-                  String taskName = device.getBusyTask();
-                  if (syncTaskName.length() > 0) {
-                    if (syncTaskName.equals(taskName)) {
-                      _taskName = taskName;
-                      _isSyncStarted = true;
-                    }
-                  } else if (taskName != null) {
-                    _isSyncStarted = true;
-                    //in case we do not know the name for  the sync-task:
-                    // use heuristic that the first non-null name is the sync-task name
-                    if (_taskName == null) {
-                      //actually try to use the task-name from next cycle:
-                      _isSettingTaskName = false;
-                    }
-                    _taskName = taskName;
-                  }
-                  LOG.d(PLUGIN_NAME, "ASYNC synchronize data: set task to '" + _taskName + "' (1)... ");//DEBUG
-                } else
-                  LOG.d(PLUGIN_NAME, "ASYNC synchronize data: continuing with task '" + _taskName + "'... ");//DEBUG
-              } else
-                LOG.d(PLUGIN_NAME, "ASYNC synchronize data: connecting... ");//DEBUG
-
-              return false;//<- continue listening (for end of sync-task)
-
-            } else {
-
-              String taskName = device.getBusyTask();
-              if (_isSettingTaskName && taskName != null) {
-                _taskName = taskName;
-                LOG.d(PLUGIN_NAME, "ASYNC synchronize data: set task to '" + _taskName + "' (2)... ");//DEBUG
-              }
-
-              if (_taskName == null) {
-                LOG.e(PLUGIN_NAME, "ASYNC synchronize data: invalid sync state: should have busy-task set, but is NULL ", device);//DEBUG
-                this.callbackContext.error("invalid sync state: should have busy-task set, but is NULL");//FIXME normalize error
-                return true;//<- remove this from pending task list
-              }
-
-              LOG.d(PLUGIN_NAME, "ASYNC synchronize data: " + device.getBusyTask());//DEBUG
-              if (!_taskName.equals(device.getBusyTask())) {
-                this.callbackContext.success();//TODO send timestamp of last activity-data sample?
-                return true;
-              } else {
-                return false;
-              }
-            }
-
-          }
-        });
-
-//            }
-      }
-
-//          //if there was no busy-task set: send result immediately
-//          if(taskDesc == null){
-//            callbackContext.success();
-//          }
-
-    } else {
-      doSendNoDeviceError(callbackContext, "Could not start data synchronization.");
-    }
-
-  }
-
-//    private void getData(final CallbackContext callbackContext, long timeout){
-//      cordova.getThreadPool().execute(new Runnable() {
-//        public void run() {
-//          try {
-//            GBDevice device = getDevice();
-//            DBHandler db = GBApplication.acquireDB();
-//            DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
-//            SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, db.getDaoSession());
-//            provider.getAllActivitySamples(tsFrom, tsTo);
-//
-//            callbackContext.success();
-//          } catch (Exception e) {
-//            LOG.e(PLUGIN_NAME, "failed to get data", e);
-//          }
-//        }
-//      });
-//    }
-
-  protected AsyncTask refreshTask;
-
-  protected void retrieveData(CallbackContext callbackContext) {
-    GBDevice device = getDevice();
-    if (device != null) {
-//        mChartDirty = false;
-//        updateDateInfo(getStartDate(), getEndDate());
-      if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
-        refreshTask.cancel(true);//TODO should this be really canceled?
-      }
-      refreshTask = new DataRetrievalTask("Retrieving Data", cordova.getActivity(), callbackContext).execute();
-    }
-  }
-
-  protected class DataRetrievalTask extends DBAccess {
-
-    private CallbackContext callbackContext;
-    private List<? extends ActivitySample> samples;
-
-    public DataRetrievalTask(String task, Context context, CallbackContext callbackContext) {
-      super(task, context);
-      this.callbackContext = callbackContext;
-    }
-
-    @Override
-    protected void doInBackground(DBHandler db) {
-      GBDevice device = getDevice();
-      if (device != null) {
-        DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
-        SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, db.getDaoSession());
-        samples = provider.getAllActivitySamples(0, toTimestamp(new Date()));//FIXME this retrieves all available sample up to now!!!
+        obj.putOpt(name, list);
 
       } else {
-        cancel(true);
-        doSendNoDeviceError(callbackContext, "Could not retrieve data.");
-      }
-    }
-
-    @Override
-    protected void onPostExecute(Object o) {
-      super.onPostExecute(o);
-      Activity activity = cordova.getActivity();
-      if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-        if (samples != null) {
-          JSONArray result = toJson(samples);
-          callbackContext.success(result);
-        } else {
-          callbackContext.error("no samples");//TODO should this really be an error, or should no-samples be a valid response?
-        }
-      } else {
-        LOG.i(PLUGIN_NAME, "Not retrieving data because activity is not available anymore");
-      }
-    }
-
-    private JSONArray toJson(List<? extends ActivitySample> list) {
-      JSONArray l = new JSONArray();
-      for (ActivitySample s : list) {
-        try {
-          JSONObject data = toJson(s);
-          l.put(data);
-        } catch (JSONException e) {
-          LOG.e(PLUGIN_NAME, "Failed to create JSONObject for sample", e);
-        }
-      }
-      return l;
-    }
-
-    private JSONObject toJson(ActivitySample sample) throws JSONException {
-      JSONObject o = new JSONObject();
-
-//      public static final int TYPE_NOT_MEASURED = -1;
-//      public static final int TYPE_UNKNOWN = 0;
-//      public static final int TYPE_ACTIVITY = 1;
-//      public static final int TYPE_LIGHT_SLEEP = 2;
-//      public static final int TYPE_DEEP_SLEEP = 4;
-//      public static final int TYPE_NOT_WORN = 8;
-      int kind = sample.getKind();
-      int timestamp = sample.getTimestamp();
-      switch (kind) {
-        case -1://TYPE_NOT_MEASURED
-          LOG.w(PLUGIN_NAME, "sample NOT_MEASURED at " + timestamp);
-          return null;////////////// EARLY EXIT ////////////////
-        case 0://TYPE_UNKNOWN
-          LOG.w(PLUGIN_NAME, "sample has UNKNOWN_TYPE at " + timestamp);
-          break;
-        case 1://TYPE_ACTIVITY
-          o.put("activity", (double) sample.getIntensity());
-          break;
-        case 2://TYPE_LIGHT_SLEEP
-          o.put("sleep1", sample.getIntensity());
-          break;
-        case 4://TYPE_LIGHT_DEEP
-          o.put("sleep2", sample.getIntensity());
-          break;
-        case 8://TYPE_NOT_WORN
-          o.put("notWorn", true);
-          break;
+        obj.putOpt(name, value);
       }
 
-      o.put("timestamp", timestamp);
-
-      int steps = sample.getSteps();
-      if (steps > 0) {
-        o.put("steps", steps);
-      }
-
-      int heartRate = sample.getHeartRate();
-      if (heartRate > 0 && heartRate < 255) {
-        o.put("heartRate", heartRate);
-      }
-
-      return o;
+    } catch (JSONException e) {
+      LOG.e(PLUGIN_NAME, String.format("Could not add JSON field %s with value %s", name, value), e);
     }
+    return obj;
   }
 
+	private enum DeviceInfoType {INFO, CONNECTION_STATE}
 
-  private GBDevice getDevice() {
+	private JSONObject toJson(GBDevice deviceInfo, DeviceInfoType type) {
+		JSONObject o = new JSONObject();
+		try {
 
-    if (this._deviceManager == null) {
-      this._deviceManager = ((GBApplication) GBApplication.getContext()).getDeviceManager();
-    }
+			//the "ID":
+			o.putOpt(INFO_FIELD_ADDRESS, deviceInfo.getAddress());
 
-    if (this._deviceManager.getSelectedDevice() == null) {
+			if(DeviceInfoType.INFO.equals(type)){
 
-      List<GBDevice> deviceList = this._deviceManager.getDevices();
-      if (deviceList.size() > 0) {
-        GBDevice device = deviceList.get(0);//GET FIRST ONE ... TODO how should multiple devices be handled?
-        GBApplication.deviceService().connect(device);
-        this._device = device;
-      }
+				//full device info
+				o.putOpt(INFO_FIELD_NAME, deviceInfo.getName());
+				o.putOpt(INFO_FIELD_MODEL, deviceInfo.getModel());
+				o.putOpt(INFO_FIELD_TYPE, deviceInfo.getType().toString());
+				o.putOpt(INFO_FIELD_FIRMWARE, deviceInfo.getFirmwareVersion());
+				o.putOpt(INFO_FIELD_STATE, deviceInfo.getState().toString());
 
-    }
-    return this._device;
-  }
+			} else if(DeviceInfoType.CONNECTION_STATE.equals(type)){
 
-  protected static void doSendTimeoutError(CallbackContext callbackContext, String message) {
-    String msg = message + " timeout";
-    LOG.e(PLUGIN_NAME, msg);
-    callbackContext.error(msg);//TODO send errorCode / normalize error
-  }
+				//device connection state
+				o.putOpt(INFO_FIELD_STATE, deviceInfo.getState().toString());
+			}
 
-  protected static void doSendNoDeviceError(CallbackContext callbackContext, String message) {
-    String msg = message + " No device available";
-    LOG.e(PLUGIN_NAME, msg);
-    callbackContext.error(msg);//TODO send errorCode / normalize error
-  }
-
-  protected void startCheckPendingTimeout() {
-
-    synchronized (_pendingResultTimeoutTaskLock) {
-      if (_pendingResultTimeoutTask == null) {
-        _pendingResultTimeoutTask = createCheckPendingTimeoutTask();
-        _pendingResultTimeoutTimer.schedule(_pendingResultTimeoutTask, RESULT_TIMEOUT, RESULT_TIMEOUT);
-      }
-    }
-  }
-
-  protected void stopCheckPendingTimeout() {
-
-    synchronized (_pendingResultTimeoutTaskLock) {
-      if (_pendingResultTimeoutTask != null) {
-        _pendingResultTimeoutTask.cancel();
-        _pendingResultTimeoutTask = null;
-      }
-    }
-
-    _pendingResultTimeoutTimer.purge();
-  }
-
-  protected TimerTask createCheckPendingTimeoutTask() {
-
-    return new TimerTask() {
-      @Override
-      public void run() {
-
-        synchronized (_pendingResultLock) {
-
-          if (_pendingResults.size() > 0) {
-            Iterator<AsyncDeviceResult> it = _pendingResults.iterator();
-            AsyncDeviceResult asyncResult;
-            long now = System.currentTimeMillis();
-            while (it.hasNext()) {
-              asyncResult = it.next();
-              if (now - asyncResult.timestamp > asyncResult.timeout) {
-                doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
-                it.remove();
-              }
-            }
-          }
-
-        }//END: synchronized()
-
-      }//END: run(){...
-
-    };//END: new TimerTask(){...
-  }
+		} catch (JSONException e) {
+			LOG.e(PLUGIN_NAME, "Failed to create JSONObject for sample", e);
+		}
+		return o;
+	}
 
 
-  ///////////////////////////////// HELPER
-  private int toTimestamp(Date date) {
-    return (int) ((date.getTime() / 1000));
-  }
+	private GBDevice getDevice() {
 
-  private String getSyncTaskName() {
-    Activity activity = this.cordova.getActivity();
-    int strId = activity.getResources().getIdentifier(NAME_SYNC_TASK, "string", activity.getApplicationInfo().packageName);
-    if (strId == 0) {
-      LOG.e(PLUGIN_NAME, "could not retrieve name for sync task, invalid ID " + NAME_SYNC_TASK + "?");
-    }
-    return activity.getString(strId);
-  }
+		if (this._deviceManager == null) {
+			this._deviceManager = ((GBApplication) GBApplication.getContext()).getDeviceManager();
+		}
+
+		if (this._deviceManager.getSelectedDevice() == null) {
+
+			List<GBDevice> deviceList = this._deviceManager.getDevices();
+			if (deviceList.size() > 0) {
+				GBDevice device = deviceList.get(0);//GET FIRST ONE ... TODO how should multiple devices be handled?
+				//        GBApplication.deviceService().connect(device);
+				this._device = device;
+			}
+
+		}
+		return this._device;
+	}
+
+	protected static void doSendTimeoutError(CallbackContext callbackContext, String message) {
+		String msg = message + " timeout";
+		LOG.e(PLUGIN_NAME, msg);
+		callbackContext.error(msg);//TODO send errorCode / normalize error
+	}
+
+	protected static void doSendNoDeviceError(CallbackContext callbackContext, String message) {
+		String msg = message + " No device available";
+		LOG.e(PLUGIN_NAME, msg);
+		callbackContext.error(msg);//TODO send errorCode / normalize error
+	}
+
+	protected void startCheckPendingTimeout() {
+
+		synchronized (_pendingResultTimeoutTaskLock) {
+			if (_pendingResultTimeoutTask == null) {
+				_pendingResultTimeoutTask = createCheckPendingTimeoutTask();
+				_pendingResultTimeoutTimer.schedule(_pendingResultTimeoutTask, RESULT_TIMEOUT, RESULT_TIMEOUT);
+			}
+		}
+	}
+
+	protected void stopCheckPendingTimeout() {
+
+		synchronized (_pendingResultTimeoutTaskLock) {
+			if (_pendingResultTimeoutTask != null) {
+				_pendingResultTimeoutTask.cancel();
+				_pendingResultTimeoutTask = null;
+			}
+		}
+
+		_pendingResultTimeoutTimer.purge();
+	}
+
+	protected TimerTask createCheckPendingTimeoutTask() {
+
+		return new TimerTask() {
+			@Override
+			public void run() {
+
+				synchronized (_pendingResultLock) {
+
+					if (_pendingResults.size() > 0) {
+						Iterator<AsyncDeviceResult> it = _pendingResults.iterator();
+						AsyncDeviceResult asyncResult;
+						long now = System.currentTimeMillis();
+						while (it.hasNext()) {
+							asyncResult = it.next();
+							if (now - asyncResult.timestamp > asyncResult.timeout) {
+								doSendTimeoutError(asyncResult.callbackContext, "Could not " + asyncResult.description);
+								it.remove();
+							}
+						}
+					}
+
+				}//END: synchronized()
+
+			}//END: run(){...
+
+		};//END: new TimerTask(){...
+	}
 
 
-//  /////////////////////////////////// APP STATE BEHAVIOR /////////////////////////////////////////////////////////
+	///////////////////////////////// HELPER
+	private int toTimestamp(Date date) {
+		return (int) ((date.getTime() / 1000));
+	}
 
-  @Override
-  public void onResume(boolean multitasking) {
-    startCheckPendingTimeout();
-    super.onResume(multitasking);
-  }
 
-  @Override
-  public void onPause(boolean multitasking) {
-    stopCheckPendingTimeout();
-    super.onPause(multitasking);
-  }
 
-  @Override
-  public void onDestroy() {
-    stopCheckPendingTimeout();
-    _pendingResultTimeoutTimer.cancel();
-    super.onDestroy();
-  }
+	///////////////////////////////////// APP STATE BEHAVIOR /////////////////////////////////////////////////////////
+
+	@Override
+	public void onResume(boolean multitasking) {
+		startCheckPendingTimeout();
+		super.onResume(multitasking);
+	}
+
+	@Override
+	public void onPause(boolean multitasking) {
+		stopCheckPendingTimeout();
+		super.onPause(multitasking);
+	}
+
+	@Override
+	public void onDestroy() {
+
+		stopCheckPendingTimeout();
+		_pendingResultTimeoutTimer.cancel();
+
+		LocalBroadcastManager.getInstance(cordova.getActivity()).unregisterReceiver(mReceiver);
+		this.cordova.getActivity().getApplicationContext().unregisterReceiver(mButtonReceiver);
+
+		super.onDestroy();
+	}
 }
