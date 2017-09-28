@@ -85,7 +85,10 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	public static final String ACTION_REMOVE_DATA = "remove";
 	public static final String ACTION_ADD_CONNECTION_LISTENER = "on_connect";
 	public static final String ACTION_REMOVE_CONNECTION_LISTENER = "off_connect";
+	public static final String ACTION_ADD_BUTTON_LISTENER = "on_button";
+	public static final String ACTION_REMOVE_BUTTON_LISTENER = "off_button";
 	private static final String ACTION_FIRE_NOTIFICATION = "fire_notification";
+	private static final String ACTION_CANCEL_NOTIFICATION = "cancel_notification";
 	private static final String ACTION_GET_CONFIG = "get_config";
 	private static final String ACTION_SET_CONFIG = "set_config";
 
@@ -141,7 +144,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	private Object _notificationRepeatTaskLock = new Object();
 	private TimerTask _notificationRepeatTask;
-	private static final long NOTIFICATION_REPEAT_DELAY = 15000l;//15 sec
+	private static final long NOTIFICATION_REPEAT_DELAY = 10000l;//10 sec
+	private int currentNotificationId = 0;
+
+	private Object _buttonListenerLock = new Object();
+	private CallbackContext _buttonListener;
 
 	/**
 	 * Helper class representing PluginResults that are pending, i.e. waiting on
@@ -262,15 +269,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			final String action = intent.getAction();
 			if(_buttonBroadcastName != null && _buttonBroadcastName.equals(action)){
 				LOG.d(PLUGIN_NAME, "BR.received notification: PREF_MIBAND_BUTTON_PRESS_BROADCAST");
-
-				//TEST
-				int id = 0;//<- FIXME create ID / get ID for current notification...?
-				GBApplication.deviceService().onDeleteNotification(id);
-
-				synchronized (_notificationRepeatTaskLock){
-					if(_notificationRepeatTask != null){
-						_notificationRepeatTask.cancel();
-						_notificationRepeatTask = null;
+				synchronized (_buttonListenerLock){
+					if(_buttonListener != null){
+						PluginResult result = new PluginResult(PluginResult.Status.OK);
+						result.setKeepCallback(true);
+						_buttonListener.sendPluginResult(result);
 					}
 				}
 			}
@@ -419,98 +422,115 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			//arg: message text /TODO: title, body (, sender?)
 			String message = getString(args, 0, null);
 
-      //(optional) arg: repeating alarms (DEFAULT: 3)
-      int repeat = getInt(args, 1, 3);
+			//(optional) arg: repeating alarms (DEFAULT: 3)
+			int repeat = getInt(args, 1, 3);
 
-			this.fireNotification(callbackContext, message, repeat);
+      //(optional) arg: delay/interval between repeating the text message (DEFAULT:
+      long delay = getLong(args, 2, NOTIFICATION_REPEAT_DELAY);
+
+			this.fireNotification(callbackContext, message, repeat, delay);
+
+		} else if (ACTION_CANCEL_NOTIFICATION.equals(action)) {
+
+			boolean canceled = false;
+			synchronized (_notificationRepeatTaskLock){
+
+				GBApplication.deviceService().onDeleteNotification(currentNotificationId);
+
+				if(_notificationRepeatTask != null){
+					canceled = _notificationRepeatTask.cancel();
+				}
+			}
+
+			callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, canceled));
 
 		} else if (ACTION_GET_CONFIG.equals(action)) {
 
-      LinkedList<String> names = null;
-      if(args.length() > 0){
-        Object obj = null;
-        try {
+			LinkedList<String> names = null;
+			if(args.length() > 0){
+				Object obj = null;
+				try {
 
-          obj = args.get(0);
-          names = new LinkedList<String>();
+					obj = args.get(0);
+					names = new LinkedList<String>();
 
-          if(obj instanceof String){
-            names.add((String) obj);
-          } else {
-            JSONArray list = (JSONArray) obj;
-            String name;
-            for(int i=0, size = list.length(); i < size; ++i){
-              name = getString(list, i, null);
-              if(name != null){
-                names.add(name);
-              }
-            }
-          }
+					if(obj instanceof String){
+						names.add((String) obj);
+					} else {
+						JSONArray list = (JSONArray) obj;
+						String name;
+						for(int i=0, size = list.length(); i < size; ++i){
+							name = getString(list, i, null);
+							if(name != null){
+								names.add(name);
+							}
+						}
+					}
 
-        } catch (JSONException e) {
-          LOG.e(PLUGIN_NAME, "get_config: could not evaluate arguments", e);
-        }
-      }
+				} catch (JSONException e) {
+					LOG.e(PLUGIN_NAME, "get_config: could not evaluate arguments", e);
+				}
+			}
 
-      JSONObject result = new JSONObject();
-      if(names == null || names.size() < 1){
-        for(Map.Entry<String, ?> e : SettingsUtil.getAll().entrySet()){
-          this.addToJson(result, e.getKey(), e.getValue());
-        }
-      } else {
-        //TODO use getPrefs() methods directly, instead of using map
-        Map<String, ?> settings = SettingsUtil.getAll();
-        for(String name : names){
-          this.addToJson(result, name, settings.get(name));
-        }
-      }
+			JSONObject result = new JSONObject();
+			if(names == null || names.size() < 1){
+				for(Map.Entry<String, ?> e : SettingsUtil.getAll().entrySet()){
+					this.addToJson(result, e.getKey(), e.getValue());
+				}
+			} else {
+				//TODO use getPrefs() methods directly, instead of using map
+				Map<String, ?> settings = SettingsUtil.getAll();
+				for(String name : names){
+					this.addToJson(result, name, settings.get(name));
+				}
+			}
 
-      callbackContext.success(result);
+			callbackContext.success(result);
 
-    } else if (ACTION_SET_CONFIG.equals(action)) {
+		} else if (ACTION_SET_CONFIG.equals(action)) {
 
 
-      if(args.length() < 2) {
+			if(args.length() < 2) {
 
-        if(args.length() > 0){
-          try {
+				if(args.length() > 0){
+					try {
 
-            Set<String> results = SettingsUtil.setPref(args.getJSONObject(0));
-            callbackContext.success(new JSONArray(results));
+						Set<String> results = SettingsUtil.setPref(args.getJSONObject(0));
+						callbackContext.success(new JSONArray(results));
 
-          } catch (JSONException e) {
-            String msg = "set_config: could not evulate first argument as JSON object";
-            LOG.e(PLUGIN_NAME, msg, e);
-            callbackContext.error(msg);
-          }
-        } else {
-          callbackContext.error("set_config: require 2 arguments, only encountered " + args.length());
-        }
+					} catch (JSONException e) {
+						String msg = "set_config: could not evulate first argument as JSON object";
+						LOG.e(PLUGIN_NAME, msg, e);
+						callbackContext.error(msg);
+					}
+				} else {
+					callbackContext.error("set_config: require 2 arguments, only encountered " + args.length());
+				}
 
-      } else {
+			} else {
 
-        String name = getString(args, 0, null);
-        if (name == null || name.length() < 1) {
-          callbackContext.error("set_config: invalid setting ID " + name);
-        } else {
+				String name = getString(args, 0, null);
+				if (name == null || name.length() < 1) {
+					callbackContext.error("set_config: invalid setting ID " + name);
+				} else {
 
-          try {
-            Object val = args.get(1);
-            if(SettingsUtil.setPref(name, val)){
-              callbackContext.success(name);
-            } else {
-              callbackContext.error(String.format("failed to set %s to %s",name, val));
-            }
-          } catch (JSONException e) {
-            String msg = "Could not extract settings value at argument index 1";
-            LOG.e(PLUGIN_NAME, msg, e);
-            callbackContext.error(msg);
-          }
-        }
+					try {
+						Object val = args.get(1);
+						if(SettingsUtil.setPref(name, val)){
+							callbackContext.success(name);
+						} else {
+							callbackContext.error(String.format("failed to set %s to %s",name, val));
+						}
+					} catch (JSONException e) {
+						String msg = "Could not extract settings value at argument index 1";
+						LOG.e(PLUGIN_NAME, msg, e);
+						callbackContext.error(msg);
+					}
+				}
 
-      }
+			}
 
-    } else if (ACTION_ADD_CONNECTION_LISTENER.equals(action)) {
+		} else if (ACTION_ADD_CONNECTION_LISTENER.equals(action)) {
 
 			//(optional) arg: return full information on device upon connection changes (instead of just the state)
 			boolean fullInfo = getBool(args, 0, false);
@@ -519,6 +539,28 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		} else if (ACTION_REMOVE_CONNECTION_LISTENER.equals(action)) {
 
 			this.removeConnectionStateListener(callbackContext);
+
+		} else if (ACTION_ADD_BUTTON_LISTENER.equals(action)) {
+
+			synchronized (_buttonListenerLock){
+
+				this.releaseButtonListener();
+				_buttonListener = callbackContext;
+			}
+
+		} else if (ACTION_REMOVE_BUTTON_LISTENER.equals(action)) {
+
+			boolean removed = false;
+			synchronized (_buttonListenerLock){
+
+				if(_buttonListener != null) {
+					this.releaseButtonListener();
+					_buttonListener = null;
+					removed = true;
+				}
+			}
+
+			callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, removed));
 
 		} else {
 
@@ -533,6 +575,13 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	}
 
+	private void releaseButtonListener() {
+		if(_buttonListener != null){
+			PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+			_buttonListener.sendPluginResult(result);
+		}
+	}
+
 	private String getString(JSONArray args, int i, String defaultValue) {
 		if(args.length() > i){
 			try{
@@ -544,17 +593,17 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		return defaultValue;
 	}
 
-  private boolean isString(JSONArray args, int i) {
-    if(args.length() > i){
-      try{
-        Object obj = args.getJSONObject(i);
-        return obj instanceof String;
-      } catch(Exception e){
-        LOG.e(PLUGIN_NAME, String.format("Could not access to extract String argument at %d as String: %s ", i, e.getLocalizedMessage()), e);
-      }
-    }
-    return false;
-  }
+	private boolean isString(JSONArray args, int i) {
+		if(args.length() > i){
+			try{
+				Object obj = args.getJSONObject(i);
+				return obj instanceof String;
+			} catch(Exception e){
+				LOG.e(PLUGIN_NAME, String.format("Could not access to extract String argument at %d as String: %s ", i, e.getLocalizedMessage()), e);
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * HELPER extract argument as boolean from index i.
@@ -562,7 +611,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	 * @param args the arguments
 	 * @param i the index in args
 	 * @param defaultValue a default value, in case the there is no boolean value in args at i
-	 * @return defaultValue if there was a problem, otherwise the boolean-argument value
+	 * @return defaultValue if there was a problem, otherwise the boolean-argument value from i
 	 */
 	private boolean getBool(JSONArray args, int i, boolean defaultValue) {
 		if(args.length() > i){
@@ -581,7 +630,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	 * @param args the arguments
 	 * @param i the index in args
 	 * @param defaultValue a default value, in case the there is no int value in args at i
-	 * @return defaultValue if there was a problem, otherwise the int-argument value
+	 * @return defaultValue if there was a problem, otherwise the int-argument value from i
 	 */
 	private int getInt(JSONArray args, int i, int defaultValue) {
 		if(args.length() > i){
@@ -593,6 +642,25 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		}
 		return defaultValue;
 	}
+
+  /**
+   * HELPER extract argument as long from index i.
+   *
+   * @param args the arguments
+   * @param i the index in args
+   * @param defaultValue a default value, in case the there is no long value in args at i
+   * @return defaultValue if there was a problem, otherwise the long-argument value from i
+   */
+  private long getLong(JSONArray args, int i, long defaultValue) {
+    if(args.length() > i){
+      try{
+        return args.getLong(i);
+      } catch(Exception e){
+        LOG.e(PLUGIN_NAME, "Failed to extract long argument at "+i+": "+e.getLocalizedMessage(), e);
+      }
+    }
+    return defaultValue;
+  }
 
 	@Override
 	public void onNewIntent(Intent intent) {
@@ -890,7 +958,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	}
 
-	protected void fireNotification(CallbackContext callbackContext, String message, int repeat) {
+	protected void fireNotification(CallbackContext callbackContext, String message, int repeat, long delay) {
 
 		GBDevice d = getDevice();
 		if (d != null) {
@@ -918,6 +986,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				final CallbackContext cb = callbackContext;
 				final String msg = message;
 				final int loops = repeat;
+        final long interval = delay;
 
 
 				synchronized (_notificationRepeatTaskLock){
@@ -934,6 +1003,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 							NotificationSpec notification = new NotificationSpec();
 
+							if(currentNotificationId + 1 >= Integer.MAX_VALUE){
+								currentNotificationId = 0;
+							}
+
+							notification.id = ++currentNotificationId;
 							notification.title = msg;
 							//notification.subject = msg;
 							notification.type = count == 0? NotificationType.GENERIC_ALARM_CLOCK : NotificationType.GENERIC_TEXT_ONLY_MESSAGE;
@@ -942,23 +1016,28 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 							LOG.d(PLUGIN_NAME, String.format("fireNotification: repeating notification (%s / %d): '%s' ", count+1, loops, msg));
 
-							if(++count == loops){
+							if(++count >= loops){
 								this.cancel();
 							}
 						}
 
 						@Override
 						public boolean cancel(){
+              super.cancel();
+
 							LOG.d(PLUGIN_NAME, String.format("CANCEL fireNotification: repeated notification (%s / %d): '%s' ", count, loops, msg));
-							cb.success();
+
+							boolean completed = count >= loops;
+							cb.sendPluginResult(new PluginResult(PluginResult.Status.OK, completed));
 							_notificationRepeatTask = null;
-							return super.cancel();
+
+              return !completed;
 						}
 					};
 				}
 
 				//FIXME
-				_pendingResultTimeoutTimer.schedule(_notificationRepeatTask, 0, NOTIFICATION_REPEAT_DELAY);
+				_pendingResultTimeoutTimer.schedule(_notificationRepeatTask, 0l, interval);
 
 			} else {
 				callbackContext.error("Could not fire notification: Not connected.");
@@ -1433,28 +1512,28 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	}
 
-  private JSONObject addToJson(JSONObject obj, String name, Object value) {
-    try {
+	private JSONObject addToJson(JSONObject obj, String name, Object value) {
+		try {
 
-      if(value instanceof Collection){
+			if(value instanceof Collection){
 
-        //TODO support array-type recursively?
-        JSONArray list = new JSONArray();
-        Iterator it = ((Collection)value).iterator();
-        while(it.hasNext()){
-          list.put(it.next());
-        }
-        obj.putOpt(name, list);
+				//TODO support array-type recursively?
+				JSONArray list = new JSONArray();
+				Iterator it = ((Collection)value).iterator();
+				while(it.hasNext()){
+					list.put(it.next());
+				}
+				obj.putOpt(name, list);
 
-      } else {
-        obj.putOpt(name, value);
-      }
+			} else {
+				obj.putOpt(name, value);
+			}
 
-    } catch (JSONException e) {
-      LOG.e(PLUGIN_NAME, String.format("Could not add JSON field %s with value %s", name, value), e);
-    }
-    return obj;
-  }
+		} catch (JSONException e) {
+			LOG.e(PLUGIN_NAME, String.format("Could not add JSON field %s with value %s", name, value), e);
+		}
+		return obj;
+	}
 
 	private enum DeviceInfoType {INFO, CONNECTION_STATE}
 

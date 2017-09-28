@@ -58,10 +58,26 @@ export interface GadgetbridgePlugin {
   /**
    * Remove listener for connection-state changes.
    *
-   * @param  {Function} [successCallback] the success callback: successCallback(didRemove: boolean)
+   * @param  {Function} [successCallback] the listener / event handler: successCallback(didRemove: boolean)
    * @param  {Function} [errorCallback] the error callback
    */
   offConnect: (successCallback?: OffConnectionSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+
+  /**
+   * Add listener for button presses (on tracker/device).
+   *
+   * @param  {Function} [successCallback] the listener / event handler: successCallback()
+   * @param  {Function} [errorCallback] the error callback
+   */
+  onButton: (successCallback?: SuccessCallback, errorCallback?: ErrorCallback) => void;
+
+  /**
+   * Remove listener  for button presses (on tracker/device).
+   *
+   * @param  {Function} [successCallback] the success callback: successCallback(didRemove: boolean)
+   * @param  {Function} [errorCallback] the error callback
+   */
+  offButton: (successCallback?: SuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Get batter level for the paired device.
@@ -77,11 +93,22 @@ export interface GadgetbridgePlugin {
    * Show notification on tracker/device (immediately).
    *
    * @param  {string} message the notification message text TODO title, body (, sender)
-   * @param  {number} [repeat] number of times, for repeating to show text message on device (DEFAULT: 3)
-   * @param  {Function} [successCallback] the success callback: successCallback()
+   * @param  {number} [repeat] number of times, for repeating to show text message on the device (DEFAULT: 3)
+   * @param  {number} [delay] delay in milliseconds between repeating the text message on the device (DEFAULT: 10000 ms (10 sec))
+   * @param  {Function} [successCallback] the success callback: successCallback(didComplete: boolean)
    * @param  {Function} [errorCallback] the error callback (e.g. if device is not connected)
    */
-  fireNotification: (message: string, repeat?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  fireNotification: (message: string, repeat?: number | NotificationSuccessCallback | ErrorCallback, delay?: number | NotificationSuccessCallback | ErrorCallback, successCallback?: NotificationSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+
+  /**
+   * Cancel notification (repeats) on tracker/device.
+   *
+   * Has no effect, if currently no notification is active.
+   *
+   * @param  {Function} [successCallback] the success callback: (didCancel: boolean)
+   * @param  {Function} [errorCallback] the error callback (e.g. if device is not connected)
+   */
+  cancelNotification: (successCallback?: NotificationSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Start data synchronization with fitness-tracker device.
@@ -133,7 +160,7 @@ export interface GadgetbridgePlugin {
   getConfig: (settingsName?: string | Array<string> | GetConfigSuccessCallback, successCallback?: GetConfigSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
-   * Set a configuration value.
+   * Set one or multiple configuration values.
    *
    * @param  {string|{[id:string]: SettingsValue|null} name
    * 					if string: the name/ID of the setting/configuration field (NOTE: must also supply value argument)
@@ -157,6 +184,7 @@ export type DeviceInfoSuccessCallback = (info: DeviceInfo | null)=>void;
 export type OffConnectionSuccessCallback = (didRemove: boolean)=>void;
 export type OnConnectionSuccessCallback = (connectionState: DeviceConnectionState)=>void;
 export type IsConnectedSuccessCallback = (connected: boolean)=>void;
+export type NotificationSuccessCallback = (didComplete: boolean)=>void;
 export type GetConfigSuccessCallback = (settings: {[id: string]: any})=>void;
 export type SetConfigSuccessCallback = (applied: string | Array<string>)=>void;
 

@@ -82,7 +82,7 @@ GadgetbridgePlugin.prototype.connect = function(timeout, successCallback, errorC
 /**
  * Add listener for connection-state changes.
  *
- * @param  {Function} [successCallback] the success callback: successCallback({address: String, state: String})
+ * @param  {Function} [successCallback] the listener / event handler: successCallback({address: String, state: String})
  * @param  {Function} [errorCallback] the error callback
  */
 GadgetbridgePlugin.prototype.onConnect = function(successCallback, errorCallback) {
@@ -99,6 +99,28 @@ GadgetbridgePlugin.prototype.onConnect = function(successCallback, errorCallback
 GadgetbridgePlugin.prototype.offConnect = function(successCallback, errorCallback) {
 
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "off_connect", []);
+};
+
+/**
+ * Add listener for button presses (on tracker/device).
+ *
+ * @param  {Function} [successCallback] the listener / event handler: successCallback()
+ * @param  {Function} [errorCallback] the error callback
+ */
+GadgetbridgePlugin.prototype.onButton = function(successCallback, errorCallback) {
+
+	addButtonListener(successCallback, errorCallback);
+};
+
+/**
+ * Remove listener  for button presses (on tracker/device).
+ *
+ * @param  {Function} [successCallback] the success callback: successCallback(didRemove: boolean)
+ * @param  {Function} [errorCallback] the error callback
+ */
+GadgetbridgePlugin.prototype.offButton = function(successCallback, errorCallback) {
+
+	removeButtonListener(successCallback, errorCallback);
 };
 
 
@@ -126,22 +148,45 @@ GadgetbridgePlugin.prototype.getBatteryLevel = function(timeout, successCallback
  * Show notification on tracker/device (immediately).
  *
  * @param  {string} message the notification message text TODO title, body (, sender)
- * @param  {number} [repeat] number of times, for repeating to show text message on device (DEFAULT: 3)
- * @param  {Function} [successCallback] the success callback: successCallback()
+ * @param  {number} [repeat] number of times, for repeating to show text message on the device (DEFAULT: 3)
+ * @param  {number} [delay] delay in milliseconds between repeating the text message on the device (DEFAULT: 10000 ms (10 sec))
+ * @param  {Function} [successCallback] the success callback: successCallback(didComplete: boolean)
  * @param  {Function} [errorCallback] the error callback (e.g. if device is not connected)
  */
-GadgetbridgePlugin.prototype.fireNotification = function(message, repeat, successCallback, errorCallback) {//TODO use option object instead of arg-list?
+GadgetbridgePlugin.prototype.fireNotification = function(message, repeat, delay, successCallback, errorCallback) {//TODO use option object instead of arg-list?
+	
 	
 	if(typeof repeat === 'function'){
-		errorCallback = successCallback;
+		errorCallback = delay;
 		successCallback = repeat;
+		delay = void(0);
 		repeat = void(0);
+	} else if(typeof delay === 'function'){
+		errorCallback = successCallback;
+		successCallback = delay;
+		delay = void(0);
 	}
 	
 	repeat = typeof repeat === 'number'? repeat : 3;
-	var args = [message, repeat];
+	delay = typeof delay === 'number'? delay : 10000;
+	var args = [message, repeat, delay];
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "fire_notification", args);
 };
+
+/**
+ * Cancel notification (repeats) on tracker/device.
+ * 
+ * Has no effect, if currently no notification is active.
+ *
+ * @param  {Function} [successCallback] the success callback: successCallback(didCancel: boolean)
+ * @param  {Function} [errorCallback] the error callback (e.g. if device is not connected)
+ */
+GadgetbridgePlugin.prototype.cancelNotification = function(successCallback, errorCallback) {
+	
+	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "cancel_notification", []);
+};
+
+
 
 /**
  * Start data synchronization with fitness-tracker device.
@@ -286,6 +331,70 @@ GadgetbridgePlugin.prototype.setConfig = function(name, value, successCallback, 
 	
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "set_config", args);
 };
+
+/*
+ * HELPERS since natively only 1 button-clicked-listener can be set:
+ * manage listener list on JS side.
+ * 
+ */
+
+
+var _buttonListener = [];
+var _buttonHandlerFunc = function onbutton(){//HELPER fire "button click" on all listeners
+	for(var i=0, size = _buttonListener.length; i < size; ++i){
+		_buttonListener[i]();
+	}
+};
+var _buttonErrorFunc = function(errCb){//HELPER invoke error callback if it exists
+	errCb && errCb(err);
+};
+
+var _doRemoveListener = function(listener){//HELPER remove listener from list
+	var l;
+	for(var i = _buttonListener.length; i >= 0; --i){
+		l = _buttonListener[i];
+		if(l === listener){
+			_buttonListener.splice(i,1);
+			return true;
+		}
+	}
+	return false;
+}
+
+function addButtonListener(listener, errorCallback){
+	
+	if(_buttonListener.length < 1){
+		
+		exec(_buttonHandlerFunc, function onButtonError(err){
+			
+			_doRemoveListener(listener);//revert adding the listener to the list
+			_buttonErrorFunc(errorCallback);
+			
+		}, "GadgetbridgePlugin", "on_button", []);
+		
+	} else if(_buttonErrorFunc){
+		setTimeout(function(){_buttonErrorFunc(errorCallback);}, 10);
+		return;
+	}
+	
+	_buttonListener.push(listener);
+}
+
+function removeButtonListener(listener, errorCallback){
+
+	var removed = _doRemoveListener(listener);
+	
+	if(removed && _buttonListener.length < 1){
+		exec(function(didRemove){
+			if(!didRemove){
+				console.warn('no onbutton listener to remove');
+			}
+			listener(removed);
+		}, errorCallback, "GadgetbridgePlugin", "off_button", []);
+	} else {
+		setTimeout(function(){listener(removed);}, 10);
+	}
+}
 
 //export an instance of GadgetbridgePlugin -> this will be returned by Corodva's require-calls
 //(i.e. "singleton pattern")
