@@ -16,6 +16,9 @@
   "keywords": [
     "cordova",
     "mmir",
+    "gadgetbridge",
+    "mi-band",
+    "pebble",
     "ecosystem:cordova",
     "cordova-android",
     "cordova-ios"

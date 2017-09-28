@@ -8,7 +8,7 @@
 
     <name>GadgetbridgePlugin</name>
 
-    <keywords>cordova,mmir</keywords>
+    <keywords>cordova,mmir,gadgetbridge,mi-band,pebble</keywords>
 
     <description>
       Cordova plugin for Gadgetbridge.
