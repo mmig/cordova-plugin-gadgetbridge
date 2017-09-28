@@ -7,5 +7,7 @@
 	<classpathentry exported="true" kind="con" path="org.eclipse.andmore.DEPENDENCIES"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Cordova5Lib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/appcompat_v7"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="lib" path="stub/android-lib/classes.jar"/>
+	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
