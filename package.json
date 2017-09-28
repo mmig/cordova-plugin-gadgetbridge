@@ -1,9 +1,9 @@
 {
-  "name": "mmir-plugin-gadgetbridge",
+  "name": "cordova-plugin-gadgetbridge",
   "version": "0.1.0",
   "description": "Cordova plugin for Gadgetbridge.",
   "cordova": {
-    "id": "mmir-plugin-gadgetbridge",
+    "id": "cordova-plugin-gadgetbridge",
     "platforms": [
       "android",
       "ios"
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mmig/mmir-plugin-gadgetbridge.git"
+    "url": "git+https://github.com/mmig/cordova-plugin-gadgetbridge.git"
   },
   "keywords": [
     "cordova",
@@ -25,7 +25,7 @@
   ],
   "engines": [
     {
-      "name": "mmir-plugin-gadgetbridge",
+      "name": "cordova-plugin-gadgetbridge",
       "version": ">=5.0"
     }
   ],
@@ -36,7 +36,7 @@
   "author": "russa",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mmig/mmir-plugin-gadgetbridge/issues"
+    "url": "https://github.com/mmig/cordova-plugin-gadgetbridge/issues"
   },
-  "homepage": "https://github.com/mmig/mmir-plugin-gadgetbridge#readme"
+  "homepage": "https://github.com/mmig/cordova-plugin-gadgetbridge#readme"
 }

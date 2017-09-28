@@ -1,4 +1,4 @@
-# mmir-plugin-gadgetbridge
+# cordova-plugin-gadgetbridge
 ----
 
 Cordova plugin for using [Gadgetbridge][1] as a library,
