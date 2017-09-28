@@ -19,139 +19,139 @@ import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class SettingsUtil {
 
-  private static final String TAG = "GadgetbridgePluginSettings";
+	private static final String TAG = "GadgetbridgePluginSettings";
 
-  private static final String TIMESTAMP_NAME_SUFFIX = "TimeMillis";
+	private static final String TIMESTAMP_NAME_SUFFIX = "TimeMillis";
 
-  public static final String NAME_SYNC_TASK = "busy_task_fetch_activity_data";
-  public static final String NAME_BUTTON_BROADCAST = "mi2_prefs_button_press_broadcast_default_value";
+	public static final String NAME_SYNC_TASK = "busy_task_fetch_activity_data";
+	public static final String NAME_BUTTON_BROADCAST = "mi2_prefs_button_press_broadcast_default_value";
 
 
-  private static String _SYNC_TASK_NAME;
-  private static String _DEF_BUTTON_PRESS_VAL;
+	private static String _SYNC_TASK_NAME;
+	private static String _DEF_BUTTON_PRESS_VAL;
 
-  public static Map<String, ?> getAll(){
-    return GBApplication.getPrefs().getPreferences().getAll();
-  }
+	public static Map<String, ?> getAll(){
+		return GBApplication.getPrefs().getPreferences().getAll();
+	}
 
-  public static Prefs getPrefs() {
-    return GBApplication.getPrefs();
-  }
+	public static Prefs getPrefs() {
+		return GBApplication.getPrefs();
+	}
 
-  public static boolean setPref(String name, Object value){
-    SharedPreferences.Editor edit = SettingsUtil.getPrefs().getPreferences().edit();
-    if(setPref(edit, name, value))
-      return edit.commit();
+	public static boolean setPref(String name, Object value){
+		SharedPreferences.Editor edit = SettingsUtil.getPrefs().getPreferences().edit();
+		if(setPref(edit, name, value))
+			return edit.commit();
 
-    return false;
-  }
+		return false;
+	}
 
-  public static Set<String> setPref(JSONObject settings){
+	public static Set<String> setPref(JSONObject settings){
 
-    HashSet<String> results = new HashSet<String>();
-    SharedPreferences.Editor edit = SettingsUtil.getPrefs().getPreferences().edit();
-    String name;
-    Iterator<String> it = settings.keys();
-    while(it.hasNext()){
+		HashSet<String> results = new HashSet<String>();
+		SharedPreferences.Editor edit = SettingsUtil.getPrefs().getPreferences().edit();
+		String name;
+		Iterator<String> it = settings.keys();
+		while(it.hasNext()){
 
-      name = it.next();
+			name = it.next();
 
-      try {
-        if(setPref(edit, name, settings.get(name)))
-          results.add(name);
-      } catch (JSONException e) {
-        LOG.e(TAG, String.format("could not set %s", name), e);
-      }
-    }
+			try {
+				if(setPref(edit, name, settings.get(name)))
+					results.add(name);
+			} catch (JSONException e) {
+				LOG.e(TAG, String.format("could not set %s", name), e);
+			}
+		}
 
-    if(results.size() > 0){
+		if(results.size() > 0){
 
-      if(edit.commit()){
-        return results;
-      } else {
-        results.clear();
-      }
+			if(edit.commit()){
+				return results;
+			} else {
+				results.clear();
+			}
 
-    }
+		}
 
-    return results;
-  }
+		return results;
+	}
 
-  /////////////////////////////// static helpers //////////////////////////////////////////
+	/////////////////////////////// static helpers //////////////////////////////////////////
 
-  public static String getSyncTaskName(Activity activity) {
+	public static String getSyncTaskName(Activity activity) {
 
-    if(_SYNC_TASK_NAME != null){
-      return _SYNC_TASK_NAME;/////////EARLY EXIT //////////////
-    }
+		if(_SYNC_TASK_NAME != null){
+			return _SYNC_TASK_NAME;/////////EARLY EXIT //////////////
+		}
 
-    int strId = activity.getResources().getIdentifier(NAME_SYNC_TASK, "string", activity.getApplicationInfo().packageName);
-    if (strId == 0) {
-      LOG.e(TAG, "could not retrieve name for sync task, invalid ID " + NAME_SYNC_TASK + "?");
-    }
+		int strId = activity.getResources().getIdentifier(NAME_SYNC_TASK, "string", activity.getApplicationInfo().packageName);
+		if (strId == 0) {
+			LOG.e(TAG, "could not retrieve name for sync task, invalid ID " + NAME_SYNC_TASK + "?");
+		}
 
-    _SYNC_TASK_NAME = activity.getString(strId);
-    return _SYNC_TASK_NAME;
-  }
+		_SYNC_TASK_NAME = activity.getString(strId);
+		return _SYNC_TASK_NAME;
+	}
 
-  public static  String getDefaultButtonPressValue(Activity activity) {
+	public static  String getDefaultButtonPressValue(Activity activity) {
 
-    if(_DEF_BUTTON_PRESS_VAL != null){
-      return _DEF_BUTTON_PRESS_VAL;///////////// EARLY EXIT ///////////
-    }
+		if(_DEF_BUTTON_PRESS_VAL != null){
+			return _DEF_BUTTON_PRESS_VAL;///////////// EARLY EXIT ///////////
+		}
 
-    int strId = activity.getResources().getIdentifier(NAME_BUTTON_BROADCAST, "string", activity.getApplicationInfo().packageName);
-    if (strId == 0) {
-      LOG.e(TAG, "could not retrieve name for button broadcast, invalid ID " + NAME_BUTTON_BROADCAST + "?");
-    }
+		int strId = activity.getResources().getIdentifier(NAME_BUTTON_BROADCAST, "string", activity.getApplicationInfo().packageName);
+		if (strId == 0) {
+			LOG.e(TAG, "could not retrieve name for button broadcast, invalid ID " + NAME_BUTTON_BROADCAST + "?");
+		}
 
-    _DEF_BUTTON_PRESS_VAL = activity.getString(strId);
-    return _DEF_BUTTON_PRESS_VAL;
-  }
+		_DEF_BUTTON_PRESS_VAL = activity.getString(strId);
+		return _DEF_BUTTON_PRESS_VAL;
+	}
 
-  /////////////////////////////////// private helpers ////////////////////////////////
+	/////////////////////////////////// private helpers ////////////////////////////////
 
-  private static boolean setPref(SharedPreferences.Editor edit, String name, Object value){
+	private static boolean setPref(SharedPreferences.Editor edit, String name, Object value){
 
-    boolean success = true;
-    if(value instanceof JSONArray){
+		boolean success = true;
+		if(value instanceof JSONArray){
 
-      JSONArray list = (JSONArray) value;
-      HashSet<String> set = new HashSet<String>();
-      for(int i=list.length()-1; i >= 0; --i){
-        set.add(list.opt(i).toString());
-      }
-      edit.putStringSet(name, set);
+			JSONArray list = (JSONArray) value;
+			HashSet<String> set = new HashSet<String>();
+			for(int i=list.length()-1; i >= 0; --i){
+				set.add(list.opt(i).toString());
+			}
+			edit.putStringSet(name, set);
 
-    } else if(value instanceof Boolean){
-      edit.putBoolean(name, (Boolean) value);
-    } else if(value instanceof String){
-      edit.putString(name, (String) value);
-    } else
-//      if(value instanceof Long){
-//      edit.putLong(name, (Long) value);
-//    } else if(value instanceof Integer){
-//      edit.putInt(name, (Integer) value);
-//    } else if(value instanceof Float){
-//      edit.putFloat(name, (Float) value);
-//    }
-    if(value != null){
-      //NOTE currently, number values, are stored as strings ... except for timestamps
-      //TODO use fixed mapping setting-name -> value-type?
-      if(value instanceof Long){//name.endsWith(TIMESTAMP_NAME_SUFFIX)){
-        //store timestamps as LONG
-        edit.putLong(name, (Long) value);
-      } else if(JSONObject.NULL.equals(value)){
-        //special case: NULL-value removes the setting
-        edit.remove(name);
-      } else {
-        //default: convert to String
-        edit.putString(name, value.toString());
-      }
-    }else {
-      success = false;
-    }
+		} else if(value instanceof Boolean){
+			edit.putBoolean(name, (Boolean) value);
+		} else if(value instanceof String){
+			edit.putString(name, (String) value);
+		} else
+			//      if(value instanceof Long){
+			//      edit.putLong(name, (Long) value);
+			//    } else if(value instanceof Integer){
+			//      edit.putInt(name, (Integer) value);
+			//    } else if(value instanceof Float){
+			//      edit.putFloat(name, (Float) value);
+			//    }
+			if(value != null){
+				//NOTE currently, number values, are stored as strings ... except for timestamps
+				//TODO use fixed mapping setting-name -> value-type?
+				if(value instanceof Long){//name.endsWith(TIMESTAMP_NAME_SUFFIX)){
+					//store timestamps as LONG
+					edit.putLong(name, (Long) value);
+				} else if(JSONObject.NULL.equals(value)){
+					//special case: NULL-value removes the setting
+					edit.remove(name);
+				} else {
+					//default: convert to String
+					edit.putString(name, value.toString());
+				}
+			}else {
+				success = false;
+			}
 
-    return success;
-  }
+		return success;
+	}
 }
