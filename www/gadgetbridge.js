@@ -44,6 +44,39 @@ GadgetbridgePlugin.prototype.getBatteryLevel = function(successCallback, errorCa
     return exec(successCallback, errorCallback, "GadgetbridgePlugin", "battery_level", args);
 };
 
+/**
+ * Start data syncrhonization with fitness-tracker device.
+ *
+ * @param  {function} successCallback the success callback: successCallback(percent)
+ * @param  {function} errorCallback the error callback (e.g. due to timeout)
+ * @param  {number} [timeout] OPTIONAL
+ *                           timeout for retrieving the batter level (if omitted, default timeout is used).
+ */
+GadgetbridgePlugin.prototype.synchronize = function(successCallback, errorCallback, timeout) {//TODO use option object instead of arg-list?
+
+		var args = typeof timeout === 'number'? [timeout] : [];
+    return exec(successCallback, errorCallback, "GadgetbridgePlugin", "sync", args);
+};
+
+/**
+ * Get activity data.
+ *
+ * @param  {function} successCallback the success callback: successCallback(percent)
+ * @param  {function} errorCallback the error callback (e.g. due to timeout)
+ * @param  {number} [start] OPTIONAL
+ *                           TODO impl./support this parameter
+ * @param  {number} [end] OPTIONAL
+ *                           TODO impl./support this parameter
+ */
+GadgetbridgePlugin.prototype.retrieveData = function(successCallback, errorCallback, start, end) {//TODO use option object instead of arg-list?
+
+		var args = typeof start === 'number'? [start] : [];
+		if(typeof stop === 'number'){
+			args.push(end);
+		}
+    return exec(successCallback, errorCallback, "GadgetbridgePlugin", "retrieve", args);
+};
+
 //export an instance of GadgetbridgePlugin -> this will be returned by Corodva's require-calls
 // (i.e. "singleton pattern")
 module.exports = new GadgetbridgePlugin();
