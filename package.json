@@ -34,7 +34,7 @@
     "definition": "www/gadgetbridge.d.ts"
   },
   "author": "russa",
-  "license": "MIT",
+  "license": "AGPL3",
   "bugs": {
     "url": "https://github.com/mmig/cordova-plugin-gadgetbridge/issues"
   },
