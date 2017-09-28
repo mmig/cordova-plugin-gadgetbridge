@@ -6,8 +6,8 @@ for accessing Pebble, Mi Band etc. devices.
 
 # Included Resources
 
-Uses a slightly modified version of [Gadgetbridge][1] that is compiled
-as a `library` instead of as an `application`, see  
+Uses a [slightly modified][2] version of [Gadgetbridge][1] that is compiled
+[as-library][3] instead of as an `application`, see  
 `res/android/libs/gadgetbridge.aar`
 
 The compiled `gadgetbridge.aar` is based on Gadgetbridge version 0.21.0
@@ -55,3 +55,5 @@ dependencies {
 
 
 [1]: https://github.com/Freeyourgadget/Gadgetbridge
+[2]: https://github.com/mmig/Gadgetbridge
+[3]: https://github.com/mmig/Gadgetbridge/tree/as-library
