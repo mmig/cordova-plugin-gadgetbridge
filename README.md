@@ -186,4 +186,4 @@ dependencies {
 [1]: https://github.com/Freeyourgadget/Gadgetbridge
 [2]: https://github.com/mmig/Gadgetbridge
 [3]: https://github.com/mmig/Gadgetbridge/tree/as-library
-[4]: https://mmig.github.io/docs/modules/_gadgetbridge_d_.html
+[4]: https://mmig.github.io/cordova-plugin-gadgetbridge/modules/_gadgetbridge_d_.html
