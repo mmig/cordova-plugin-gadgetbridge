@@ -4,3 +4,4 @@ bin
 .project
 /.classpath
 /stub/android-lib
+/node_modules/

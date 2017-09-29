@@ -38,5 +38,11 @@
   "bugs": {
     "url": "https://github.com/mmig/cordova-plugin-gadgetbridge/issues"
   },
-  "homepage": "https://github.com/mmig/cordova-plugin-gadgetbridge#readme"
+  "scripts": {
+    "doc": "typedoc --includeDeclarations --excludeExternals --exclude node_modules --excludePrivate --readme none --theme minimal --out docs www/gadgetbridge.d.ts"
+  },
+  "homepage": "https://github.com/mmig/cordova-plugin-gadgetbridge#readme",
+  "devDependencies": {
+    "typedoc": "^0.8.0"
+  }
 }

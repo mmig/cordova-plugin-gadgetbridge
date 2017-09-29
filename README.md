@@ -13,6 +13,135 @@ Uses a [slightly modified][2] version of [Gadgetbridge][1] that is compiled
 The compiled `gadgetbridge.aar` is based on Gadgetbridge version 0.21.0
 (versionCode 101, git hash 1efd73af5e9673a740e1954d3c678c2a65cf0718).
 
+
+# Installation
+
+```
+cordova plugin add https://github.com/mmig/cordova-plugin-gadgetbridge
+```
+
+# Usage
+
+For details see [API docs][4].
+
+**NOTE** that currently, the plugin is designed to work with *one* paired device.   
+
+**NOTE** current implementation focuses on supporting the Mi-Band 2 device.
+
+```javascript
+
+//get plugin instance:
+var GadgetbridgePlugin = window.cordova.plugins.gadgetbridgePlugin;
+
+//NOTE success- and error-callback parameters are always optional
+
+//open an activity / view of Gadgetbridge app.
+//valid argument values:
+// * "ControlCenterv2"
+// * "SettingsActivity"
+// * "MiBandPreferencesActivity"
+// * "AppBlacklistActivity"
+// * "DebugActivity"
+// * "DbManagementActivity"
+// * "DiscoveryActivity"
+// * "MiBandPairingActivity"
+// * "ChartsActivity"
+// * "ConfigureAlarms"
+// * "AlarmDetails"
+GadgetbridgePlugin.openView(viewType, successCallback, errorCallback);
+
+
+//get info of (first paired) wristband/tracker device
+GadgetbridgePlugin.getDeviceInfo(successCallback({//or null
+		name: String,
+		address: String,
+		model: String,
+		type: String,
+		firmware: String
+	}, errorCallback
+);
+
+//Check, if paired device is (fully) connected
+GadgetbridgePlugin.isConnected(successCallback(boolean), errorCallback);
+
+//Connect to paired device.
+GadgetbridgePlugin.connect(successCallback, errorCallback);
+GadgetbridgePlugin.connect(timeout, successCallback, errorCallback);
+
+//Get batter level for the paired device
+GadgetbridgePlugin.getBatteryLevel(successCallback(percent), errorCallback);
+GadgetbridgePlugin.getBatteryLevel(timeout, successCallback(percent), errorCallback);
+
+//////////////////// Notifications (on wristband/tracker device) ////////////////////////////
+
+//Show notification on tracker/device
+GadgetbridgePlugin.fireNotification(message, successCallback(completed), errorCallback);
+GadgetbridgePlugin.fireNotification(message, repeat, successCallback(completed), errorCallback);
+GadgetbridgePlugin.fireNotification(message, repeat, delay, successCallback(completed), errorCallback);
+
+//Cancel notification (repeats) on tracker/device
+GadgetbridgePlugin.cancelNotification(successCallback(prevented), errorCallback);
+
+
+/////////////////////////////////// Activity Data /////////////////////////////////////////
+
+//Start data synchronization with wristband/tracker device (pull data from device into application database)
+GadgetbridgePlugin.synchronize = function(successCallback, errorCallback);
+GadgetbridgePlugin.synchronize = function(timeout, successCallback, errorCallback);
+
+//Get activity data from application database
+GadgetbridgePlugin.retrieveData(successCallback([{
+  activity: number,//double
+  /**light sleep*/
+  sleep1: number,//float
+  /**deep sleep*/
+  sleep2: number,//float
+  notWorn: boolean,
+  steps: number,//integer
+  heartRate: number,// [0,255]
+  raw: number,//integer
+  timestamp: number//10-digit / UNIX timestamp
+}, ... ]), errorCallback);
+//Get activity data from application database
+GadgetbridgePlugin.retrieveData(start, successCallback(data), errorCallback);
+GadgetbridgePlugin.retrieveData(start, end, successCallback(data), errorCallback);
+
+//Remove / delete activity data from application database
+GadgetbridgePlugin.removeData(successCallback, errorCallback);
+GadgetbridgePlugin.removeData(start, successCallback, errorCallback);
+GadgetbridgePlugin.removeData(start, end, successCallback, errorCallback);
+
+
+
+/////////////////////// Configuration / Settings /////////////////////////////////
+
+
+//Get configuration setting(s).
+GadgetbridgePlugin.getConfig(settingsName/*string or Array<string>*/, successCallback({
+	"the-settings-name": the_value,
+	...
+}), errorCallback);
+
+
+//Set one or multiple configuration values
+GadgetbridgePlugin.setConfig(name, value, successCallback(nameOfSuccessfullyChangedSetting), errorCallback);
+GadgetbridgePlugin.setConfig({setting1: value1, ...}, successCallback([setting1, ...]), errorCallback); 
+
+
+////////////////////////// Events / Listeners //////////////////////////////////////
+
+//listen to connection changes of device
+GadgetbridgePlugin.onConnect(listener, errorCallback);
+GadgetbridgePlugin.offConnect(successCallback, errorCallback);
+
+//listen to button presses of (Mi-Band 2) device
+GadgetbridgePlugin.onButton(listener, errorCallback);
+GadgetbridgePlugin.offButton(successCallback, errorCallback);
+
+```
+
+
+
 # Development
 
 ## Update Gadgetbridge
@@ -57,3 +186,4 @@ dependencies {
 [1]: https://github.com/Freeyourgadget/Gadgetbridge
 [2]: https://github.com/mmig/Gadgetbridge
 [3]: https://github.com/mmig/Gadgetbridge/tree/as-library
+[4]: /docs/modules/_gadgetbridge_d_.html
