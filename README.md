@@ -86,8 +86,8 @@ GadgetbridgePlugin.cancelNotification(successCallback(prevented), errorCallback)
 /////////////////////////////////// Activity Data /////////////////////////////////////////
 
 //Start data synchronization with wristband/tracker device (pull data from device into application database)
-GadgetbridgePlugin.synchronize = function(successCallback, errorCallback);
-GadgetbridgePlugin.synchronize = function(timeout, successCallback, errorCallback);
+GadgetbridgePlugin.synchronize(successCallback, errorCallback);
+GadgetbridgePlugin.synchronize(timeout, successCallback, errorCallback);
 
 //Get activity data from application database
 GadgetbridgePlugin.retrieveData(successCallback([{
