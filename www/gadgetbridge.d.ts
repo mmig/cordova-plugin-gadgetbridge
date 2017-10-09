@@ -11,7 +11,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback (no arguments)
    * @param  {Function} [errorCallback] the error callback
    */
-  openView: (viewType: ViewType, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  openView: (viewType: ViewType, successCallback?: SuccessCallback, errorCallback?: ErrorCallback) => void;
 
 
   /**
@@ -27,7 +27,7 @@ export interface GadgetbridgePlugin {
    * 										}
    * @param  {Function} [errorCallback] the error callback
    */
-  getDeviceInfo: (successCallback: DeviceInfoSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  getDeviceInfo: (successCallback: DeviceInfoSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Check, if paired device is (fully) connected.
@@ -35,7 +35,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback(boolean)
    * @param  {Function} [errorCallback] the error callback
    */
-  isConnected: (successCallback: IsConnectedSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  isConnected: (successCallback: IsConnectedSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Connect to paired device.
@@ -45,7 +45,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback()
    * @param  {Function} [errorCallback] the error callback (e.g. due to timeout)
    */
-  connect: (timeout?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  connect: (timeout?: number | SuccessCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Add listener for connection-state changes.
@@ -53,7 +53,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback({address: String, state: String})
    * @param  {Function} [errorCallback] the error callback
    */
-  onConnect: (successCallback?: OnConnectionSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  onConnect: (successCallback?: OnConnectionSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Remove listener for connection-state changes.
@@ -61,7 +61,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the listener / event handler: successCallback(didRemove: boolean)
    * @param  {Function} [errorCallback] the error callback
    */
-  offConnect: (successCallback?: OffConnectionSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  offConnect: (successCallback?: OffConnectionSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Add listener for button presses (on tracker/device).
@@ -87,7 +87,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback(percent)
    * @param  {Function} [errorCallback] the error callback (e.g. due to timeout)
    */
-  getBatteryLevel: (timeout?: number | ChargeSuccessCallback | ErrorCallback, successCallback?: ChargeSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  getBatteryLevel: (timeout?: number | ChargeSuccessCallback, successCallback?: ChargeSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Show notification on tracker/device (immediately).
@@ -98,7 +98,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback(didComplete: boolean)
    * @param  {Function} [errorCallback] the error callback (e.g. if device is not connected)
    */
-  fireNotification: (message: string, repeat?: number | NotificationSuccessCallback | ErrorCallback, delay?: number | NotificationSuccessCallback | ErrorCallback, successCallback?: NotificationSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  fireNotification: (message: string, repeat?: number | NotificationSuccessCallback, delay?: number | NotificationSuccessCallback | ErrorCallback, successCallback?: NotificationSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Cancel notification (repeats) on tracker/device.
@@ -118,7 +118,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback()
    * @param  {Function} [errorCallback] the error callback (e.g. due to timeout)
    */
-  synchronize: (timeout?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  synchronize: (timeout?: number | SuccessCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Get activity data.
@@ -132,7 +132,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback(data)
    * @param  {Function} [errorCallback] the error callback (e.g. no device paired)
    */
-  retrieveData: (start?: number | SampleDataSuccessCallback | ErrorCallback, end?: number | SampleDataSuccessCallback | ErrorCallback, successCallback?: SampleDataSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  retrieveData: (start?: number | SampleDataSuccessCallback, end?: number | SampleDataSuccessCallback | ErrorCallback, successCallback?: SampleDataSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Remove activity data from data base.
@@ -146,7 +146,7 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback()
    * @param  {Function} [errorCallback] the error callback (e.g. no device paired)
    */
-  removeData: (start?: number | SuccessCallback | ErrorCallback, end?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  removeData: (start?: number | SuccessCallback, end?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Get configuration setting(s).
