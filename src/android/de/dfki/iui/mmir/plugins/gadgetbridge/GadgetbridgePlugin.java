@@ -834,6 +834,8 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 							PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(device, DeviceInfoType.CONNECTION_STATE));
 							result.setKeepCallback(true);
 							callbackContext.sendPluginResult(result);
+							
+							this.prevState = state;
 						}
 
 						//do not remove this "listener" from _pendingResults:
