@@ -87,7 +87,7 @@ GadgetbridgePlugin.prototype.connect = function(timeout, successCallback, errorC
  */
 GadgetbridgePlugin.prototype.onConnect = function(successCallback, errorCallback) {
 
-	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "on_connect", []);
+	addConnectionChangedListener(successCallback, errorCallback);
 };
 
 /**
@@ -98,7 +98,7 @@ GadgetbridgePlugin.prototype.onConnect = function(successCallback, errorCallback
  */
 GadgetbridgePlugin.prototype.offConnect = function(successCallback, errorCallback) {
 
-	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "off_connect", []);
+	removeConnectionChangedListener(successCallback, errorCallback);
 };
 
 /**
@@ -332,34 +332,75 @@ GadgetbridgePlugin.prototype.setConfig = function(name, value, successCallback, 
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "set_config", args);
 };
 
-/*
- * HELPERS since natively only 1 button-clicked-listener can be set:
- * manage listener list on JS side.
+/* ****************************************************************
+ * HELPERS use only 1 native listener for connection-changes ->
+ *         do manage multiple listeners via list on JS side.
  * 
  */
 
 
+var _connectionListeners = [];
+var _connectionChangeHandlerFunc = function onconnection(state){//HELPER fire "connection changed" on all listeners
+	_connectionErrorFunc = null;//<- reset error, if there was one previously
+	for(var i=0, size = _connectionListeners.length; i < size; ++i){
+		_connectionListeners[i](state);
+	}
+};
+var _connectionErrorFunc = null;//HELPER error callback: will be set, if there was an error registering the native callback
+
+function addConnectionChangedListener(listener, errorCallback){
+	
+	if(_connectionListeners.length < 1){
+		
+		exec(_connectionChangeHandlerFunc, function onButtonError(err){
+			
+			_doRemoveListener(listener, _connectionListeners);//revert adding the listener to the list
+			_connectionErrorFunc = function(errCb){//set error-function callback to output this error
+				errCb && errCb(err);
+			};
+			_connectionErrorFunc(errorCallback);
+			
+		}, "GadgetbridgePlugin", "on_connect", []);
+		
+	} else if(_connectionErrorFunc){
+		setTimeout(function(){_connectionErrorFunc(errorCallback);}, 10);
+		return;
+	}
+	
+	_connectionListeners.push(listener);
+}
+
+function removeConnectionChangedListener(listener, errorCallback){
+
+	var removed = _doRemoveConnectionListener(listener, _connectionListeners);
+	
+	if(removed && _connectionListeners.length < 1){
+		exec(function(didRemove){
+			if(!didRemove){
+				console.warn('no onconnectionchanged listener to remove');
+			}
+			listener(removed);
+		}, errorCallback, "GadgetbridgePlugin", "off_connect", []);
+	} else {
+		setTimeout(function(){listener(removed);}, 10);
+	}
+}
+
+
+/* *****************************************************************
+ * HELPERS since natively only 1 button-clicked-listener can be set:
+ *         must manage listener list on JS side.
+ * 
+ */
+
 var _buttonListener = [];
 var _buttonHandlerFunc = function onbutton(){//HELPER fire "button click" on all listeners
+	_buttonErrorFunc = null;//<- reset error, if there was one previously
 	for(var i=0, size = _buttonListener.length; i < size; ++i){
 		_buttonListener[i]();
 	}
 };
-var _buttonErrorFunc = function(errCb){//HELPER invoke error callback if it exists
-	errCb && errCb(err);
-};
-
-var _doRemoveListener = function(listener){//HELPER remove listener from list
-	var l;
-	for(var i = _buttonListener.length; i >= 0; --i){
-		l = _buttonListener[i];
-		if(l === listener){
-			_buttonListener.splice(i,1);
-			return true;
-		}
-	}
-	return false;
-}
+var _buttonErrorFunc = null;//HELPER error callback: will be set, if there was an error registering the native callback
 
 function addButtonListener(listener, errorCallback){
 	
@@ -367,7 +408,10 @@ function addButtonListener(listener, errorCallback){
 		
 		exec(_buttonHandlerFunc, function onButtonError(err){
 			
-			_doRemoveListener(listener);//revert adding the listener to the list
+			_doRemoveListener(listener, _buttonListener);//revert adding the listener to the list
+			_buttonErrorFunc = function(errCb){//set error-function callback to output this error
+				errCb && errCb(err);
+			};
 			_buttonErrorFunc(errorCallback);
 			
 		}, "GadgetbridgePlugin", "on_button", []);
@@ -382,7 +426,7 @@ function addButtonListener(listener, errorCallback){
 
 function removeButtonListener(listener, errorCallback){
 
-	var removed = _doRemoveListener(listener);
+	var removed = _doRemoveListener(listener, _buttonListener);
 	
 	if(removed && _buttonListener.length < 1){
 		exec(function(didRemove){
@@ -394,6 +438,21 @@ function removeButtonListener(listener, errorCallback){
 	} else {
 		setTimeout(function(){listener(removed);}, 10);
 	}
+}
+
+
+/////////////////////////////////////////// utility functions
+
+var _doRemoveListener = function(listener, list){//HELPER remove listener from list
+	var l;
+	for(var i = list.length; i >= 0; --i){
+		l = list[i];
+		if(l === listener){
+			list.splice(i,1);
+			return true;
+		}
+	}
+	return false;
 }
 
 //export an instance of GadgetbridgePlugin -> this will be returned by Corodva's require-calls
