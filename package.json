@@ -23,12 +23,11 @@
     "cordova-android",
     "cordova-ios"
   ],
-  "engines": [
-    {
-      "name": "cordova-plugin-gadgetbridge",
-      "version": ">=5.0"
+  "engines": {
+    "cordovaDependencies": {
+      "1.0.0": { "cordova": ">100" }
     }
-  ],
+  },
   "types": "www/gadgetbridge.d.ts",
   "typescript": {
     "definition": "www/gadgetbridge.d.ts"
