@@ -822,14 +822,14 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 						final GBDevice.State state = device.getState();
 
-						if(!allStatusChanges && (!GBDevice.State.NOT_CONNECTED.equals(state) || !GBDevice.State.INITIALIZED.equals(state))){
-							//if not all connection-status changes should be reported: ignore all changes other than not-connected & initialized (i.e. "fully-connected")
-							return false;//<- FALSE, so that this "listener" is kept in _pendingResults list
-						}
-
-						LOG.d(PLUGIN_NAME, "ASYNC connection state changed: " + device.getState().toString());//DEBUG
-
 						if (!this.prevState.equals(state)) {
+							
+							if(!allStatusChanges && (!GBDevice.State.NOT_CONNECTED.equals(state) && !GBDevice.State.INITIALIZED.equals(state))){
+								//if not all connection-status changes should be reported: ignore all changes other than not-connected & initialized (i.e. "fully-connected")
+								return false;//<- FALSE, so that this "listener" is kept in _pendingResults list
+							}
+
+							LOG.d(PLUGIN_NAME, "ASYNC connection state changed: " + device.getState().toString());//DEBUG
 
 							PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(device, DeviceInfoType.CONNECTION_STATE));
 							result.setKeepCallback(true);
