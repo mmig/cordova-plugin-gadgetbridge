@@ -124,6 +124,10 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	public static final String INFO_FIELD_TYPE = "type";
 	public static final String INFO_FIELD_FIRMWARE = "firmware";
 	public static final String INFO_FIELD_STATE = "state";
+	
+	public static final String INFO_FIELD_BAT_LEVEL = "level";
+	public static final String INFO_FIELD_BAT_THRESHOLD = "threshold";
+	public static final String INFO_FIELD_BAT_STATE = "state";
 
 	private static String _buttonBroadcastName;
 
@@ -336,11 +340,17 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		} else if (ACTION_BATTERY_LEVEL.equals(action)) {
 
 			long timeout;
+			boolean includeDetails = false;
 
 			try {
 
 				if (args.length() > 0) {
 					timeout = args.getInt(0);
+					
+					if(args.length() > 1){
+						includeDetails = args.getBoolean(1);
+					}
+					
 				} else {
 					timeout = RESULT_TIMEOUT;
 				}
@@ -353,7 +363,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				timeout = RESULT_TIMEOUT;
 			}
 
-			this.getBatteryLevel(callbackContext, timeout);
+			this.getBatteryLevel(callbackContext, timeout, includeDetails);
 
 		} else if (ACTION_SYNCHRONIZE_DATA.equals(action)) {
 
@@ -915,7 +925,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	}
 
-	protected void getBatteryLevel(CallbackContext callbackContext, long timeout) {
+	protected void getBatteryLevel(CallbackContext callbackContext, long timeout, final boolean details) {
 
 		GBDevice d = getDevice();
 		if (d != null) {
@@ -927,7 +937,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			}
 
 			if (d.isConnected()) {
-				callbackContext.success(d.getBatteryLevel());
+				if(!details){
+					callbackContext.success(d.getBatteryLevel());
+				} else {
+					callbackContext.success(toJson(d, DeviceInfoType.BATTERY_INFO));
+				}
 			} else {
 
 				synchronized (_pendingResultLock) {
@@ -939,7 +953,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 							int level = device.getBatteryLevel();
 							LOG.d(PLUGIN_NAME, "ASYNC device battery: " + level);//DEBUG
 							if (level != -1) {
-								this.callbackContext.success(level);
+								if(!details){
+									this.callbackContext.success(level);
+								} else {
+									this.callbackContext.success(toJson(device, DeviceInfoType.BATTERY_INFO));
+								}
 								return true;
 							} else {
 								return false;
@@ -1537,7 +1555,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		return obj;
 	}
 
-	private enum DeviceInfoType {INFO, CONNECTION_STATE}
+	private enum DeviceInfoType {INFO, CONNECTION_STATE, BATTERY_INFO}
 
 	private JSONObject toJson(GBDevice deviceInfo, DeviceInfoType type) {
 		JSONObject o = new JSONObject();
@@ -1559,6 +1577,13 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 				//device connection state
 				o.putOpt(INFO_FIELD_STATE, deviceInfo.getState().toString());
+				
+			} else if(DeviceInfoType.BATTERY_INFO.equals(type)){
+
+				//device battery state
+				o.putOpt(INFO_FIELD_BAT_LEVEL, deviceInfo.getBatteryLevel());
+				o.putOpt(INFO_FIELD_BAT_THRESHOLD, deviceInfo.getBatteryThresholdPercent());
+				o.putOpt(INFO_FIELD_BAT_STATE, deviceInfo.getBatteryState().toString());
 			}
 
 		} catch (JSONException e) {

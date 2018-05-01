@@ -126,21 +126,44 @@ GadgetbridgePlugin.prototype.offButton = function(successCallback, errorCallback
 
 /**
  * Get batter level for the paired device.
- *
+ * 
  * @param  {number} [timeout] OPTIONAL
  *                           timeout for retrieving the batter level (if omitted, default timeout is used).
- * @param  {Function} [successCallback] the success callback: successCallback(percent)
+ * @param  {boolean} [details] OPTIONAL
+ *                           include details of battery level in response (threshold, charge/non-charging etc)
+ * @param  {Function} [successCallback] the success callback: successCallback(percent: NUMBER, details?: {level: NUMBER, thresholdInPercent: NUMBER, state: STRING})
+ * 										NOTE: 2nd parameter in callback is only present, if this function was called with details-argument TRUE
  * @param  {Function} [errorCallback] the error callback (e.g. due to timeout)
  */
-GadgetbridgePlugin.prototype.getBatteryLevel = function(timeout, successCallback, errorCallback) {//TODO use option object instead of arg-list?
+GadgetbridgePlugin.prototype.getBatteryLevel = function(timeout, details, successCallback, errorCallback) {//TODO use option object instead of arg-list?
 	
 	if(typeof timeout === 'function'){
-		errorCallback = successCallback;
+		errorCallback = details;
 		successCallback = timeout;
+		details = void(0);
+		timeout = void(0);
+	} if(typeof timeout === 'boolean'){
+		errorCallback = successCallback;
+		successCallback = details;
+		details = timeout;
+		timeout = void(0);
+	} else if(typeof details === 'function'){
+		errorCallback = timeout;
+		successCallback = details;
+		details = void(0);
 		timeout = void(0);
 	}
 	
 	var args = typeof timeout === 'number'? [timeout] : [];
+	if(typeof details === 'boolean'){
+		args.push(details);
+		if(successCallback){
+			var successCallbackOrig = successCallback;
+			successCallback = function(details){
+				successCallbackOrig.call(this, details.level, details);
+			};
+		}
+	}
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "battery_level", args);
 };
 
