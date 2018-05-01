@@ -937,7 +937,6 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			}
 
 			if (d.isConnected()) {
-				callbackContext.success(d.getBatteryLevel());
 				if(!details){
 					callbackContext.success(d.getBatteryLevel());
 				} else {
