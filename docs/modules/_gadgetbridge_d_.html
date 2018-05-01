@@ -908,6 +908,9 @@ img { max-width: 100%; }
 <nav class="tsd-navigation secondary">
 	<ul>
 		<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+			<a href="../interfaces/_gadgetbridge_d_.batterydetails.html" class="tsd-kind-icon">Battery<wbr>Details</a>
+		</li>
+		<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 			<a href="../interfaces/_gadgetbridge_d_.datasample.html" class="tsd-kind-icon">Data<wbr>Sample</a>
 		</li>
 		<li class=" tsd-kind-interface tsd-parent-kind-external-module">
@@ -918,6 +921,9 @@ img { max-width: 100%; }
 		</li>
 		<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 			<a href="../interfaces/_gadgetbridge_d_.gadgetbridgeplugin.html" class="tsd-kind-icon">Gadgetbridge<wbr>Plugin</a>
+		</li>
+		<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
+			<a href="_gadgetbridge_d_.html#batterystate" class="tsd-kind-icon">Battery<wbr>State</a>
 		</li>
 		<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
 			<a href="_gadgetbridge_d_.html#chargesuccesscallback" class="tsd-kind-icon">Charge<wbr>Success<wbr>Callback</a>
@@ -972,6 +978,7 @@ img { max-width: 100%; }
 					<section class="tsd-index-section ">
 						<h3>Interfaces</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_gadgetbridge_d_.batterydetails.html" class="tsd-kind-icon">Battery<wbr>Details</a></li>
 							<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_gadgetbridge_d_.datasample.html" class="tsd-kind-icon">Data<wbr>Sample</a></li>
 							<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_gadgetbridge_d_.deviceconnectionstate.html" class="tsd-kind-icon">Device<wbr>Connection<wbr>State</a></li>
 							<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_gadgetbridge_d_.deviceinfo.html" class="tsd-kind-icon">Device<wbr>Info</a></li>
@@ -981,6 +988,7 @@ img { max-width: 100%; }
 					<section class="tsd-index-section ">
 						<h3>Type aliases</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_gadgetbridge_d_.html#batterystate" class="tsd-kind-icon">Battery<wbr>State</a></li>
 							<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_gadgetbridge_d_.html#chargesuccesscallback" class="tsd-kind-icon">Charge<wbr>Success<wbr>Callback</a></li>
 							<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_gadgetbridge_d_.html#connectionstate" class="tsd-kind-icon">Connection<wbr>State</a></li>
 							<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_gadgetbridge_d_.html#deviceinfosuccesscallback" class="tsd-kind-icon">Device<wbr>Info<wbr>Success<wbr>Callback</a></li>
@@ -1003,12 +1011,22 @@ img { max-width: 100%; }
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Type aliases</h2>
 			<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module">
+				<a name="batterystate" class="tsd-anchor"></a>
+				<h3>Battery<wbr>State</h3>
+				<div class="tsd-signature tsd-kind-icon">Battery<wbr>State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"UNKNOWN"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"BATTERY_NORMAL"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"BATTERY_LOW"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"BATTERY_CHARGING"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"BATTERY_CHARGING_FULL"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"BATTERY_NOT_CHARGING_FULL"</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L223">gadgetbridge.d.ts:223</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module">
 				<a name="chargesuccesscallback" class="tsd-anchor"></a>
 				<h3>Charge<wbr>Success<wbr>Callback</h3>
 				<div class="tsd-signature tsd-kind-icon">Charge<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L182">gadgetbridge.d.ts:182</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L185">gadgetbridge.d.ts:185</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1016,7 +1034,7 @@ img { max-width: 100%; }
 					<ul class="tsd-parameters">
 						<li class="tsd-parameter-siganture">
 							<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-type-alias tsd-is-not-exported">
-								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>chargePercent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>chargePercent<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, details<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_gadgetbridge_d_.batterydetails.html" class="tsd-signature-type">BatteryDetails</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 							</ul>
 							<ul class="tsd-descriptions">
 								<li class="tsd-description">
@@ -1024,6 +1042,9 @@ img { max-width: 100%; }
 									<ul class="tsd-parameters">
 										<li>
 											<h5>chargePercent: <span class="tsd-signature-type">number</span></h5>
+										</li>
+										<li>
+											<h5><span class="tsd-flag ts-flagOptional">Optional</span> details: <a href="../interfaces/_gadgetbridge_d_.batterydetails.html" class="tsd-signature-type">BatteryDetails</a></h5>
 										</li>
 									</ul>
 									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -1039,7 +1060,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Connection<wbr>State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"NOT_CONNECTED"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"WAITING_FOR_RECONNECT"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"CONNECTING"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"CONNECTED"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"INITIALIZING"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"AUTHENTICATION_REQUIRED"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"AUTHENTICATING"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"INITIALIZED"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L205">gadgetbridge.d.ts:205</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L214">gadgetbridge.d.ts:214</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1049,7 +1070,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Device<wbr>Info<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L183">gadgetbridge.d.ts:183</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L186">gadgetbridge.d.ts:186</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1080,7 +1101,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Error<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L179">gadgetbridge.d.ts:179</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L182">gadgetbridge.d.ts:182</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1111,7 +1132,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Get<wbr>Config<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L188">gadgetbridge.d.ts:188</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L191">gadgetbridge.d.ts:191</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1147,7 +1168,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Is<wbr>Connected<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L186">gadgetbridge.d.ts:186</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L189">gadgetbridge.d.ts:189</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1178,7 +1199,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Notification<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L187">gadgetbridge.d.ts:187</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L190">gadgetbridge.d.ts:190</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1209,7 +1230,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Off<wbr>Connection<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L184">gadgetbridge.d.ts:184</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L187">gadgetbridge.d.ts:187</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1240,7 +1261,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">On<wbr>Connection<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L185">gadgetbridge.d.ts:185</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L188">gadgetbridge.d.ts:188</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1271,7 +1292,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Sample<wbr>Data<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L181">gadgetbridge.d.ts:181</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L184">gadgetbridge.d.ts:184</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1302,7 +1323,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Set<wbr>Config<wbr>Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L189">gadgetbridge.d.ts:189</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L192">gadgetbridge.d.ts:192</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1333,7 +1354,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Settings<wbr>Value<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L214">gadgetbridge.d.ts:214</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L225">gadgetbridge.d.ts:225</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1343,7 +1364,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">Success<wbr>Callback<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">function</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L180">gadgetbridge.d.ts:180</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L183">gadgetbridge.d.ts:183</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -1368,7 +1389,7 @@ img { max-width: 100%; }
 				<div class="tsd-signature tsd-kind-icon">View<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"ControlCenterv2"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"SettingsActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"MiBandPreferencesActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"AppBlacklistActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"DebugActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"DbManagementActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"DiscoveryActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"MiBandPairingActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ChartsActivity"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"ConfigureAlarms"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"AlarmDetails"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/b4302a0/www/gadgetbridge.d.ts#L3">gadgetbridge.d.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/mmig/cordova-plugin-gadgetbridge/blob/43db461/www/gadgetbridge.d.ts#L3">gadgetbridge.d.ts:3</a></li>
 					</ul>
 				</aside>
 			</section>

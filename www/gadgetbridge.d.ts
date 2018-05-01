@@ -84,10 +84,13 @@ export interface GadgetbridgePlugin {
    *
    * @param  {number} [timeout] OPTIONAL
    *                           timeout for retrieving the batter level (if omitted, default timeout is used).
-   * @param  {Function} [successCallback] the success callback: successCallback(percent)
+ * @param  {boolean} [details] OPTIONAL
+ *                           include details of battery level in response (threshold, charge/non-charging etc)
+ * @param  {Function} [successCallback] the success callback: successCallback(percent: NUMBER, details?: {level: NUMBER, thresholdInPercent: NUMBER, state: STRING})
+ * 										NOTE: 2nd parameter in callback is only present, if this function was called with details-argument TRUE
    * @param  {Function} [errorCallback] the error callback (e.g. due to timeout)
    */
-  getBatteryLevel: (timeout?: number | ChargeSuccessCallback, successCallback?: ChargeSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  getBatteryLevel: (timeout?: number | boolean | ChargeSuccessCallback, details?: boolean | ChargeSuccessCallback | ErrorCallback, successCallback?: ChargeSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Show notification on tracker/device (immediately).
@@ -179,7 +182,7 @@ export interface GadgetbridgePlugin {
 export type ErrorCallback = (error)=>void;
 export type SuccessCallback = ()=>void;
 export type SampleDataSuccessCallback = (data: Array<DataSample>)=>void;
-export type ChargeSuccessCallback = (chargePercent: number)=>void;
+export type ChargeSuccessCallback = (chargePercent: number, details?: BatteryDetails)=>void;
 export type DeviceInfoSuccessCallback = (info: DeviceInfo | null)=>void;
 export type OffConnectionSuccessCallback = (didRemove: boolean)=>void;
 export type OnConnectionSuccessCallback = (connectionState: DeviceConnectionState)=>void;
@@ -202,6 +205,12 @@ export interface DeviceConnectionState {
   state: ConnectionState;
 }
 
+export interface BatteryDetails {
+  level: number;
+  threshold: number;
+  state: BatteryState;
+}
+
 export type ConnectionState = "NOT_CONNECTED" |
   "WAITING_FOR_RECONNECT" |
   "CONNECTING" |
@@ -210,6 +219,8 @@ export type ConnectionState = "NOT_CONNECTED" |
   "AUTHENTICATION_REQUIRED" |
   "AUTHENTICATING" |
   "INITIALIZED";
+
+export type BatteryState = "UNKNOWN" | "BATTERY_NORMAL" | "BATTERY_LOW" | "BATTERY_CHARGING" | "BATTERY_CHARGING_FULL" | "BATTERY_NOT_CHARGING_FULL";
 
 export type SettingsValue = string | number | boolean | Array<string | number | boolean>;
 
