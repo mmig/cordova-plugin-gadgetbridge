@@ -125,8 +125,10 @@ GadgetbridgePlugin.getConfig(settingsName/*string or Array<string>*/, successCal
 
 //Set one or multiple configuration values
 GadgetbridgePlugin.setConfig(name, value, successCallback(nameOfSuccessfullyChangedSetting), errorCallback);
-GadgetbridgePlugin.setConfig({setting1: value1, ...}, successCallback([setting1, ...]), errorCallback); 
+GadgetbridgePlugin.setConfig({setting1: value1, ...}, successCallback([setting1, ...]), errorCallback);
 
+// custom settings (i.e. in addition to standard Gadgetbridge settings):
+// * "disableSyncToast" (boolean): hides/does not show Toast message when synchronizing data from device
 
 ////////////////////////// Events / Listeners //////////////////////////////////////
 

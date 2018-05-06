@@ -165,6 +165,10 @@ export interface GadgetbridgePlugin {
   /**
    * Set one or multiple configuration values.
    *
+   * Custom settings (i.e. in addition to standard Gadgetbridge settings):
+   *  * "disableSyncToast" (boolean): hides/does not show Toast message when synchronizing data from device
+   *
+   *
    * @param  {string|{[id:string]: SettingsValue|null} name
    * 					if string: the name/ID of the setting/configuration field (NOTE: must also supply value argument)
    * 					if object: the settings (name & value) that should be applied
