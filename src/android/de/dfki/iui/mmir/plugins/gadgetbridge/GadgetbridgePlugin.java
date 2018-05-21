@@ -55,6 +55,7 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.Alarm;
 import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.NotificationType;
+import nodomain.freeyourgadget.gadgetbridge.model.RecordedDataTypes;
 import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 
@@ -1085,7 +1086,8 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				GBApplication.deviceService().connect(d);
 			}
 
-			GBApplication.deviceService().onFetchActivityData();
+//			GBApplication.deviceService().onFetchActivityData();
+            GBApplication.deviceService().onFetchRecordedData(RecordedDataTypes.TYPE_ACTIVITY);
 			final String taskDesc = d.getBusyTask();
 			synchronized (_pendingResultLock) {
 
