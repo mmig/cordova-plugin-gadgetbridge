@@ -260,7 +260,7 @@ GadgetbridgePlugin.prototype.retrieveData = function(start, end, successCallback
 	}
 	
 	var args = typeof start === 'number'? [start] : [];
-	if(typeof stop === 'number'){
+	if(typeof end === 'number'){
 		args.push(end);
 	}
 	
@@ -296,7 +296,7 @@ GadgetbridgePlugin.prototype.removeData = function(start, end, successCallback, 
 	}
 	
 	var args = typeof start === 'number'? [start] : [];
-	if(typeof stop === 'number'){
+	if(typeof end === 'number'){
 		args.push(end);
 	}
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "remove", args);
