@@ -155,6 +155,8 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	private Object _buttonListenerLock = new Object();
 	private CallbackContext _buttonListener;
 
+	private ApplySettings _settingsApplier;
+
 	/**
 	 * Helper class representing PluginResults that are pending, i.e. waiting on
 	 * on updated device information.
@@ -289,6 +291,8 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	@Override
 	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
 		super.initialize(cordova, webView);
+		
+		_settingsApplier = new ApplySettings(cordova);
 
 		_pendingResultTimeoutTimer = new Timer();
 		_buttonBroadcastName = SettingsUtil.getDefaultButtonPressValue(this.cordova.getActivity());
@@ -506,7 +510,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				if(args.length() > 0){
 					try {
 
-						Set<String> results = SettingsUtil.setPref(args.getJSONObject(0));
+						Set<String> results = SettingsUtil.setPref(args.getJSONObject(0), _settingsApplier);
 						callbackContext.success(new JSONArray(results));
 
 					} catch (JSONException e) {

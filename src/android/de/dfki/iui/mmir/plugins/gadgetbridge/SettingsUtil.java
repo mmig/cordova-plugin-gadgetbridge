@@ -46,19 +46,25 @@ public class SettingsUtil {
 		return false;
 	}
 
-	public static Set<String> setPref(JSONObject settings){
+	public static Set<String> setPref(JSONObject settings, ApplySettings applier){
 
 		HashSet<String> results = new HashSet<String>();
 		SharedPreferences.Editor edit = SettingsUtil.getPrefs().getPreferences().edit();
 		String name;
+		Object val;
 		Iterator<String> it = settings.keys();
 		while(it.hasNext()){
 
 			name = it.next();
 
 			try {
-				if(setPref(edit, name, settings.get(name)))
+				
+				val = settings.get(name);
+				if(setPref(edit, name, val)){
+					applier.applySettings(name, val);
 					results.add(name);
+				}
+				
 			} catch (JSONException e) {
 				LOG.e(TAG, String.format("could not set %s", name), e);
 			}
