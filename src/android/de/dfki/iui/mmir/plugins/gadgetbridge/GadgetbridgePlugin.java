@@ -84,6 +84,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	public static final String ACTION_SYNCHRONIZE_DATA = "sync";
 	public static final String ACTION_RETRIEVE_DATA = "retrieve";
 	public static final String ACTION_REMOVE_DATA = "remove";
+	public static final String ACTION_REMOVE_ALL_DATA = "remove_all";
 	public static final String ACTION_ADD_CONNECTION_LISTENER = "on_connect";
 	public static final String ACTION_REMOVE_CONNECTION_LISTENER = "off_connect";
 	public static final String ACTION_ADD_BUTTON_LISTENER = "on_button";
@@ -401,10 +402,18 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 		} else if (ACTION_REMOVE_DATA.equals(action)) {
 
+			//FIXME currently this not supported by Gadgebridge:
+			//      -> cannot handle deletion of entities with composed-keys (and mi-band-entries key is (device_id, user_id)!)
+			//      -> this will, as of now, always return errors
+			
 			int start = getInt(args, 0, 0);//default: starting at UNIX zero -> 1970 ...
 			int end = getInt(args, 1, toTimestamp(new Date()));//default: up to now
 
-			this.removeData(start, end, callbackContext);
+			this.removeData(start, end, false, callbackContext);
+
+		} else if (ACTION_REMOVE_ALL_DATA.equals(action)) {
+
+			this.removeData(-1, -1, true, callbackContext);
 
 		} else if (ACTION_DEVICE_INFO.equals(action)) {
 
@@ -1245,73 +1254,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
 			}
 		}
-
-		private JSONArray toJson(List<? extends ActivitySample> list) {
-			JSONArray l = new JSONArray();
-			for (ActivitySample s : list) {
-				try {
-					JSONObject data = toJson(s);
-					l.put(data);
-				} catch (JSONException e) {
-					LOG.e(PLUGIN_NAME, "Failed to create JSONObject for sample", e);
-				}
-			}
-			return l;
-		}
-
-		private JSONObject toJson(ActivitySample sample) throws JSONException {
-			JSONObject o = new JSONObject();
-
-			//			public static final int TYPE_NOT_MEASURED = -1;
-			//			public static final int TYPE_UNKNOWN = 0;
-			//			public static final int TYPE_ACTIVITY = 1;
-			//			public static final int TYPE_LIGHT_SLEEP = 2;
-			//			public static final int TYPE_DEEP_SLEEP = 4;
-			//			public static final int TYPE_NOT_WORN = 8;
-			int kind = sample.getKind();
-			int timestamp = sample.getTimestamp();
-			switch (kind) {
-			case -1://TYPE_NOT_MEASURED
-				LOG.w(PLUGIN_NAME, "sample NOT_MEASURED at " + timestamp);
-				return null;////////////// EARLY EXIT ////////////////
-			case 0://TYPE_UNKNOWN
-				LOG.w(PLUGIN_NAME, "sample has UNKNOWN_TYPE at " + timestamp);
-				break;
-			case 1://TYPE_ACTIVITY
-				o.put(FIELD_ACTIVITY, (double) sample.getIntensity());
-				break;
-			case 2://TYPE_LIGHT_SLEEP
-				o.put(FIELD_LIGHT_SLEEP, sample.getIntensity());
-				break;
-			case 4://TYPE_LIGHT_DEEP
-				o.put(FIELD_DEEP_SLEEP, sample.getIntensity());
-				break;
-			case 8://TYPE_NOT_WORN
-				o.put(FIELD_NOT_WORN, true);
-				break;
-			}
-
-			o.put(FIELD_RAW_INTENSITY, sample.getRawIntensity());
-
-			o.put(FIELD_TIMESTAMP, timestamp);
-
-			int steps = sample.getSteps();
-			if (steps > 0) {
-				o.put(FIELD_STEPS, steps);
-			}
-
-			int heartRate = sample.getHeartRate();
-			if (heartRate > 0 && heartRate < 255) {
-				o.put(FIELD_HEART_RATE, heartRate);
-			}
-
-			return o;
-		}
 	}
 
 	protected AsyncTask removeTask;
 
-	protected void removeData(int start, int end, CallbackContext callbackContext) {
+	protected void removeData(int start, int end, boolean isRemoveAll, CallbackContext callbackContext) {
 		GBDevice device = getDevice();
 		if (device != null) {
 
@@ -1326,7 +1273,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				return;
 			}
 
-			removeTask = new DataRemovalTask(TASK_REMOVING_DATA, start, end, cordova.getActivity(), callbackContext).execute();
+			removeTask = new DataRemovalTask(TASK_REMOVING_DATA, start, end, isRemoveAll, cordova.getActivity(), callbackContext).execute();
 		} else {
 			doSendNoDeviceError(callbackContext, "Could not remove data");
 		}
@@ -1338,33 +1285,70 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 		private int start;
 		private int end;
+		private boolean removeAll;
 
-		private boolean errorsOccurred;
+		private List<ActivitySample> removedSamples;
+		private List<String> errors;
+		private Exception lastError;
 
-		public DataRemovalTask(String task, int startTimestamp, int endTimestamp, Context context, CallbackContext callbackContext) {
+		public DataRemovalTask(String task, int startTimestamp, int endTimestamp, boolean isRemoveAll, Context context, CallbackContext callbackContext) {
 			super(task, context);
-			this.errorsOccurred = false;
 			this.start = startTimestamp;
 			this.end = endTimestamp;
+			this.removeAll = isRemoveAll;
 			this.callbackContext = callbackContext;
+			this.removedSamples = new LinkedList<ActivitySample>();
 		}
 
 		@Override
 		protected void doInBackground(DBHandler db) {
 			GBDevice device = getDevice();
 			if (device != null) {
-				DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
-				SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, db.getDaoSession());
+				DaoSession session = db.getDaoSession();
+				
+				if(removeAll){
 
-				List<? extends ActivitySample> samples = provider.getAllActivitySamples(start, end);
+					try {
+						
+						session.deleteAll(MiBandActivitySample.class);
 
-				if(samples != null) {
-					for (ActivitySample s : samples) {
-						try {
-							((MiBandActivitySample) s).delete();
-						} catch (Exception e) {
-							//TODO "log" errors, and send in plugin result?
-							LOG.e(PLUGIN_NAME, "ERROR while removing sample from Db " + s, e);
+					} catch (Exception e) {
+						
+						String msg = "ERROR removing all samples from Db";
+						LOG.e(PLUGIN_NAME, msg, e);
+						
+						if(errors == null){
+							errors = new LinkedList<String>();
+						}
+						errors.add(msg +  " " + e);
+						lastError = e;
+					}
+					
+				} else {
+				
+					DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
+					SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, session);
+	
+					List<? extends ActivitySample> samples = provider.getAllActivitySamples(start, end);
+	
+					if(samples != null) {
+						for (ActivitySample s : samples) {
+							try {
+	
+								((MiBandActivitySample) s).delete();
+								removedSamples.add(s);
+	
+							} catch (Exception e) {
+								
+								String msg = "ERROR while removing sample from Db " + s;
+								LOG.e(PLUGIN_NAME, msg, e);
+								
+								if(errors == null){
+									errors = new LinkedList<String>();
+								}
+								errors.add(msg +  " " + e);
+								lastError = e;
+							}
 						}
 					}
 				}
@@ -1380,10 +1364,33 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			super.onPostExecute(o);
 			Activity activity = cordova.getActivity();
 			if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-				if (!errorsOccurred) {
-					callbackContext.success();
+
+				boolean hasErrors = errors == null;
+				if(removedSamples.size() > 0 || hasErrors){
+					
+
+					JSONObject result = new JSONObject();
+					addToJson(result, "message", hasErrors? "errors occured" : "success");
+					
+					if(errors != null){
+						JSONArray l = new JSONArray();
+						for(String s : errors){
+							l.put(s);
+						}
+						addToJson(result, "errors", l);
+					}
+					
+					if(!removeAll){
+						JSONArray rmList = toJson(removedSamples);
+						addToJson(result, "removed", rmList);
+					}
+
+					callbackContext.success(result);
+
 				} else {
-					callbackContext.error("error while removing samples");//TODO should this be more detailed? e.g. count of errors, or list of timestamps?
+
+					String msg = lastError != null? " (last error) " + lastError.getMessage() : "error(s) while removing data.";
+					callbackContext.error("Could not remove any data: "+msg);
 				}
 			} else {
 				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
@@ -1616,6 +1623,68 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 		}
 		return this._device;
+	}
+
+	private JSONArray toJson(List<? extends ActivitySample> list) {
+		JSONArray l = new JSONArray();
+		for (ActivitySample s : list) {
+			try {
+				JSONObject data = toJson(s);
+				l.put(data);
+			} catch (JSONException e) {
+				LOG.e(PLUGIN_NAME, "Failed to create JSONObject for sample", e);
+			}
+		}
+		return l;
+	}
+
+	private JSONObject toJson(ActivitySample sample) throws JSONException {
+		JSONObject o = new JSONObject();
+
+		//			public static final int TYPE_NOT_MEASURED = -1;
+		//			public static final int TYPE_UNKNOWN = 0;
+		//			public static final int TYPE_ACTIVITY = 1;
+		//			public static final int TYPE_LIGHT_SLEEP = 2;
+		//			public static final int TYPE_DEEP_SLEEP = 4;
+		//			public static final int TYPE_NOT_WORN = 8;
+		int kind = sample.getKind();
+		int timestamp = sample.getTimestamp();
+		switch (kind) {
+		case -1://TYPE_NOT_MEASURED
+			LOG.w(PLUGIN_NAME, "sample NOT_MEASURED at " + timestamp);
+			return null;////////////// EARLY EXIT ////////////////
+		case 0://TYPE_UNKNOWN
+			LOG.w(PLUGIN_NAME, "sample has UNKNOWN_TYPE at " + timestamp);
+			break;
+		case 1://TYPE_ACTIVITY
+			o.put(FIELD_ACTIVITY, (double) sample.getIntensity());
+			break;
+		case 2://TYPE_LIGHT_SLEEP
+			o.put(FIELD_LIGHT_SLEEP, sample.getIntensity());
+			break;
+		case 4://TYPE_LIGHT_DEEP
+			o.put(FIELD_DEEP_SLEEP, sample.getIntensity());
+			break;
+		case 8://TYPE_NOT_WORN
+			o.put(FIELD_NOT_WORN, true);
+			break;
+		}
+
+		o.put(FIELD_RAW_INTENSITY, sample.getRawIntensity());
+
+		o.put(FIELD_TIMESTAMP, timestamp);
+
+		int steps = sample.getSteps();
+		if (steps > 0) {
+			o.put(FIELD_STEPS, steps);
+		}
+
+		int heartRate = sample.getHeartRate();
+		if (heartRate > 0 && heartRate < 255) {
+			o.put(FIELD_HEART_RATE, heartRate);
+		}
+
+		return o;
 	}
 
 	protected static void doSendTimeoutError(CallbackContext callbackContext, String message) {

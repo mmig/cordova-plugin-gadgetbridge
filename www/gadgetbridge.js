@@ -268,6 +268,9 @@ GadgetbridgePlugin.prototype.retrieveData = function(start, end, successCallback
 };
 
 /**
+ * @deprecated FIXME currently not supported by Gadgebridge: cannot handle deletion of entities with composed-keys (and mi-band-entries key is (device_id, user_id)!)
+ * 
+ * 
  * Remove activity data from data base.
  *
  * @param  {number} [start] OPTIONAL
@@ -300,6 +303,17 @@ GadgetbridgePlugin.prototype.removeData = function(start, end, successCallback, 
 		args.push(end);
 	}
 	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "remove", args);
+};
+
+/**
+ * Remove activity data from data base.
+ * 
+ * @param  {Function} [successCallback] the success callback: successCallback()
+ * @param  {Function} [errorCallback] the error callback (e.g. no device paired)
+ */
+GadgetbridgePlugin.prototype.removeAllData = function(successCallback, errorCallback) {//TODO use option object instead of arg-list?
+
+	return exec(successCallback, errorCallback, "GadgetbridgePlugin", "remove_all", []);
 };
 
 /**

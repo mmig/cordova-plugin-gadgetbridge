@@ -138,6 +138,7 @@ export interface GadgetbridgePlugin {
   retrieveData: (start?: number | SampleDataSuccessCallback, end?: number | SampleDataSuccessCallback | ErrorCallback, successCallback?: SampleDataSuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
 
   /**
+   * @deprecated FIXME currently not supported by Gadgebridge: cannot handle deletion of entities with composed-keys (and mi-band-entries key is (device_id, user_id)!)
    * Remove activity data from data base.
    *
    * @param  {number} [start] OPTIONAL
@@ -149,7 +150,15 @@ export interface GadgetbridgePlugin {
    * @param  {Function} [successCallback] the success callback: successCallback()
    * @param  {Function} [errorCallback] the error callback (e.g. no device paired)
    */
-  removeData: (start?: number | SuccessCallback, end?: number | SuccessCallback | ErrorCallback, successCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+  removeData: (start?: number | RemoveDataSuccessCallback, end?: number | RemoveDataSuccessCallback | ErrorCallback, RemoveDataSuccessCallback?: SuccessCallback | ErrorCallback, errorCallback?: ErrorCallback) => void;
+
+  /**
+   * Remove activity data from data base.
+   *
+   * @param  {Function} [successCallback] the success callback: successCallback()
+   * @param  {Function} [errorCallback] the error callback (e.g. no device paired)
+   */
+  removeAllData: (successCallback?: RemoveDataSuccessCallback, errorCallback?: ErrorCallback) => void;
 
   /**
    * Get configuration setting(s).
@@ -186,6 +195,7 @@ export interface GadgetbridgePlugin {
 export type ErrorCallback = (error)=>void;
 export type SuccessCallback = ()=>void;
 export type SampleDataSuccessCallback = (data: Array<DataSample>)=>void;
+export type RemoveDataSuccessCallback = (result: {message: string, errors?: Array<string>, removed?: Array<DataSample>})=>void;
 export type ChargeSuccessCallback = (chargePercent: number, details?: BatteryDetails)=>void;
 export type DeviceInfoSuccessCallback = (info: DeviceInfo | null)=>void;
 export type OffConnectionSuccessCallback = (didRemove: boolean)=>void;
