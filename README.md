@@ -4,6 +4,13 @@
 Cordova plugin for using [Gadgetbridge][1] as a library,
 for accessing Pebble, Mi Band etc. devices.
 
+# Limitations
+
+Due to background service, _Gadgetbridge_ can be installed only once on an android-device:
+ * either the _Gadgetbrige_ app itself
+ * or exactly one app that uses this cordova-plugin
+
+
 # Included Resources
 
 Uses a [slightly modified][2] version of [Gadgetbridge][1] that is compiled
@@ -106,10 +113,17 @@ GadgetbridgePlugin.retrieveData(successCallback([{
 GadgetbridgePlugin.retrieveData(start, successCallback(data), errorCallback);
 GadgetbridgePlugin.retrieveData(start, end, successCallback(data), errorCallback);
 
-//Remove / delete activity data from application database
-GadgetbridgePlugin.removeData(successCallback, errorCallback);
-GadgetbridgePlugin.removeData(start, successCallback, errorCallback);
-GadgetbridgePlugin.removeData(start, end, successCallback, errorCallback);
+//IMPORTANT: currently Gadgetbridge does not implement deleting data by time-ranges correctly,
+//           so removeData() will always fail!
+//           If appropriate, the method removeAllData() can be used instead.
+ 
+//[DO NOT USE: use removeAllData() instead, if possible] Remove / delete activity data from application database
+//GadgetbridgePlugin.removeData(successCallback, errorCallback);
+//GadgetbridgePlugin.removeData(start, successCallback, errorCallback);
+//GadgetbridgePlugin.removeData(start, end, successCallback, errorCallback);
+
+//Remove / delete all Mi-Band 2 activity data from application database
+GadgetbridgePlugin.removeAllData(successCallback, errorCallback);
 
 
 
