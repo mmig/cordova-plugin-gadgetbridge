@@ -10,29 +10,30 @@ repositories{
 }
 
 dependencies {
-    compile fileTree(dir: "libs", include: ["*.jar"])
-    compile "com.android.support:appcompat-v7:27.1.1"
-    compile "com.android.support:cardview-v7:27.1.1"
-    compile "com.android.support:recyclerview-v7:27.1.1"
-    compile "com.android.support:support-v4:27.1.1"
-    compile "com.android.support:gridlayout-v7:27.1.1"
-    compile "com.android.support:design:27.1.1"
-    compile "com.android.support:palette-v7:27.1.1"
-    compile("com.github.tony19:logback-android-classic:1.1.1-6") {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation "com.android.support:appcompat-v7:27.1.1"
+    implementation "com.android.support:cardview-v7:27.1.1"
+    implementation "com.android.support:recyclerview-v7:27.1.1"
+    implementation "com.android.support:support-v4:27.1.1"
+    implementation "com.android.support:gridlayout-v7:27.1.1"
+    implementation "com.android.support:design:27.1.1"
+    implementation "com.android.support:palette-v7:27.1.1"
+    implementation("com.github.tony19:logback-android-classic:1.1.1-6") {
         exclude group: "com.google.android", module: "android"
     }
-    compile "org.slf4j:slf4j-api:1.7.12"
-    compile "com.github.Freeyourgadget:MPAndroidChart:5e5bd6c1d3e95c515d4853647ae554e48ee1d593"
-    compile "com.github.pfichtner:durationformatter:0.1.1"
-    compile "de.cketti.library.changelog:ckchangelog:1.2.2"
-    compile "net.e175.klaus:solarpositioning:0.0.9"
+    implementation "org.slf4j:slf4j-api:1.7.12"
+    implementation "com.github.Freeyourgadget:MPAndroidChart:5e5bd6c1d3e95c515d4853647ae554e48ee1d593"
+    implementation "com.github.pfichtner:durationformatter:0.1.1"
+    implementation "de.cketti.library.changelog:ckchangelog:1.2.2"
+    implementation "net.e175.klaus:solarpositioning:0.0.9"
     // use pristine greendao instead of our custom version, since our custom jitpack-packaged
     // version contains way too much and our custom patches are in the generator only.
-    compile "org.greenrobot:greendao:2.2.1"
-    compile "org.apache.commons:commons-lang3:3.5"
-    compile "org.cyanogenmod:platform.sdk:6.0"
+    implementation "org.greenrobot:greendao:2.2.1"
+    implementation "org.apache.commons:commons-lang3:3.5"
+    implementation "org.cyanogenmod:platform.sdk:6.0"
+    implementation 'com.jaredrummler:colorpicker:1.0.2'
 
-    compile(name:'gadgetbridge', ext:'aar')
+    implementation(name:'gadgetbridge', ext:'aar')
 }
 
 android {    
