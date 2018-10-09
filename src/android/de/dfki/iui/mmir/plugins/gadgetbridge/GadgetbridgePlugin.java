@@ -1,12 +1,14 @@
 package de.dfki.iui.mmir.plugins.gadgetbridge;
 
-import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.AsyncTask;
-import android.support.v4.content.LocalBroadcastManager;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -18,16 +20,17 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.AsyncTask;
+import android.support.v4.content.LocalBroadcastManager;
+import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataInsertionTask;
+import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataRemovalTask;
+import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataRetrievalTask;
+import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DbTaskType;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.activities.AppBlacklistActivity;
 import nodomain.freeyourgadget.gadgetbridge.activities.ConfigureAlarms;
@@ -126,7 +129,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	public static final String INFO_FIELD_TYPE = "type";
 	public static final String INFO_FIELD_FIRMWARE = "firmware";
 	public static final String INFO_FIELD_STATE = "state";
-	
+
 	public static final String INFO_FIELD_BAT_LEVEL = "level";
 	public static final String INFO_FIELD_BAT_THRESHOLD = "threshold";
 	public static final String INFO_FIELD_BAT_STATE = "state";
@@ -292,7 +295,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	@Override
 	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
 		super.initialize(cordova, webView);
-		
+
 		_settingsApplier = new ApplySettings(cordova);
 
 		_pendingResultTimeoutTimer = new Timer();
@@ -308,14 +311,14 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		filter.addAction(_buttonBroadcastName);
 		cordova.getActivity().getApplicationContext().registerReceiver(mButtonReceiver, filter);
 
-		//		//TODO add a callable init-method -> check there, if it is run the first time
-		//		Prefs prefs = GBApplication.getPrefs();
-		//		if (prefs.getBoolean("firstrun", true)) {
-		//		prefs.getPreferences().edit().putBoolean("firstrun", false).apply();
-		//		Intent enableIntent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
-		//		startActivity(enableIntent);
+//		//TODO add a callable init-method -> check there, if it is run the first time
+//		Prefs prefs = GBApplication.getPrefs();
+//		if (prefs.getBoolean("firstrun", true)) {
+//		prefs.getPreferences().edit().putBoolean("firstrun", false).apply();
+//		Intent enableIntent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+//		startActivity(enableIntent);
 
-		//		}
+//		}
 
 		GBApplication.deviceService().start();
 		GBApplication.deviceService().requestDeviceInfo();
@@ -352,11 +355,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 				if (args.length() > 0) {
 					timeout = args.getInt(0);
-					
+
 					if(args.length() > 1){
 						includeDetails = args.getBoolean(1);
 					}
-					
+
 				} else {
 					timeout = RESULT_TIMEOUT;
 				}
@@ -405,7 +408,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			//FIXME currently this not supported by Gadgebridge:
 			//      -> cannot handle deletion of entities with composed-keys (and mi-band-entries key is (device_id, user_id)!)
 			//      -> this will, as of now, always return errors
-			
+
 			int start = getInt(args, 0, 0);//default: starting at UNIX zero -> 1970 ...
 			int end = getInt(args, 1, toTimestamp(new Date()));//default: up to now
 
@@ -749,16 +752,16 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			}
 
 		}
-		//		else if (target.equals(ACTION_START_ALARM)) {
-		//		targetCl = AlarmDetails.class;
+//		else if (target.equals(ACTION_START_ALARM)) {
+//		targetCl = AlarmDetails.class;
 
-		//		//avoidSendAlarmsToDevice = true;
-		//		intent.putExtra("alarm", alarm);
-		//		intent.putExtra(GBDevice.EXTRA_DEVICE, getDevice());
-		//		//startActivityForResult(startIntent, REQ_CONFIGURE_ALARM);
+//		//avoidSendAlarmsToDevice = true;
+//		intent.putExtra("alarm", alarm);
+//		intent.putExtra(GBDevice.EXTRA_DEVICE, getDevice());
+//		//startActivityForResult(startIntent, REQ_CONFIGURE_ALARM);
 
 
-		//		}
+//		}
 		else {
 			targetCl = null;
 		}
@@ -847,7 +850,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 						final GBDevice.State state = device.getState();
 
 						if (!this.prevState.equals(state)) {
-							
+
 							if(!allStatusChanges && (!GBDevice.State.NOT_CONNECTED.equals(state) && !GBDevice.State.INITIALIZED.equals(state))){
 								//if not all connection-status changes should be reported: ignore all changes other than not-connected & initialized (i.e. "fully-connected")
 								return false;//<- FALSE, so that this "listener" is kept in _pendingResults list
@@ -858,7 +861,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 							PluginResult result = new PluginResult(PluginResult.Status.OK, toJson(device, DeviceInfoType.CONNECTION_STATE));
 							result.setKeepCallback(true);
 							callbackContext.sendPluginResult(result);
-							
+
 							this.prevState = state;
 						}
 
@@ -1186,6 +1189,40 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 	}
 
+	protected enum DbTaskType {RETRIEVE, REMOVE, INSERT}
+	protected LinkedList<DBAccess> dbTasks = new LinkedList<DBAccess>();
+	protected void executeNextDbTask(DbTaskType ignoreActiveTask){
+		synchronized (dbTasks) {
+			if (dbTasks.size() > 0 && !isDbTaskActive(ignoreActiveTask)) {
+				LOG.d(PLUGIN_NAME, "executing next DBAccess task...");
+				dbTasks.removeFirst().execute();
+			} else {
+				LOG.d(PLUGIN_NAME, "no next DBAccess task to execute");
+			}
+		}
+	}
+	protected boolean queueIfDbTaskActive(DBAccess task){
+		synchronized (dbTasks) {
+			if (isDbTaskActive(null)) {
+				LOG.d(PLUGIN_NAME, "queuing DBAccess task");
+				dbTasks.addLast(task);
+				return true;
+			}
+		}
+		LOG.d(PLUGIN_NAME, "no need to queue DBAccess task");
+		return false;
+	}
+	protected boolean isDbTaskActive(DbTaskType ignoreActiveTask){
+		if (
+				   (!DbTaskType.REMOVE.equals(ignoreActiveTask)   && removeTask  != null && removeTask.getStatus()  != AsyncTask.Status.FINISHED)
+				|| (!DbTaskType.RETRIEVE.equals(ignoreActiveTask) && refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED)
+				|| (!DbTaskType.INSERT.equals(ignoreActiveTask)   && insertTask  != null && insertTask.getStatus()  != AsyncTask.Status.FINISHED)
+		) {
+
+			return true;
+		}
+		return false;
+	}
 
 	protected AsyncTask refreshTask;
 
@@ -1193,17 +1230,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		GBDevice device = getDevice();
 		if (device != null) {
 
-			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
-				return;
-			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
-				refreshTask.cancel(true);//TODO should this be really canceled?
-			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
-				return;
+			DataRetrievalTask task = new DataRetrievalTask(TASK_RETRIEVING_DATA, start, end, cordova.getActivity(), callbackContext);
+			if(!queueIfDbTaskActive(task)){
+				refreshTask = task.execute();
 			}
 
-			refreshTask = new DataRetrievalTask(TASK_RETRIEVING_DATA, start, end, cordova.getActivity(), callbackContext).execute();
 		} else {
 			doSendNoDeviceError(callbackContext, "Could not retrieve data");
 		}
@@ -1250,6 +1281,9 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				} else {
 					callbackContext.error("no samples");//TODO should this really be an error, or should no-samples be a valid response?
 				}
+
+				executeNextDbTask(DbTaskType.RETRIEVE);
+
 			} else {
 				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
 			}
@@ -1262,18 +1296,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		GBDevice device = getDevice();
 		if (device != null) {
 
-			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
-				return;
-			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data retrieval task is in progress");//TODO should this really be an error?
-				return;
-			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
-				return;
+			DataRemovalTask task = new DataRemovalTask(TASK_REMOVING_DATA, start, end, isRemoveAll, cordova.getActivity(), callbackContext);
+			if(!queueIfDbTaskActive(task)){
+				removeTask = task.execute();
 			}
 
-			removeTask = new DataRemovalTask(TASK_REMOVING_DATA, start, end, isRemoveAll, cordova.getActivity(), callbackContext).execute();
 		} else {
 			doSendNoDeviceError(callbackContext, "Could not remove data");
 		}
@@ -1305,44 +1332,44 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 			GBDevice device = getDevice();
 			if (device != null) {
 				DaoSession session = db.getDaoSession();
-				
+
 				if(removeAll){
 
 					try {
-						
+
 						session.deleteAll(MiBandActivitySample.class);
 
 					} catch (Exception e) {
-						
+
 						String msg = "ERROR removing all samples from Db";
 						LOG.e(PLUGIN_NAME, msg, e);
-						
+
 						if(errors == null){
 							errors = new LinkedList<String>();
 						}
 						errors.add(msg +  " " + e);
 						lastError = e;
 					}
-					
+
 				} else {
-				
+
 					DeviceCoordinator coordinator = DeviceHelper.getInstance().getCoordinator(device);
 					SampleProvider<? extends ActivitySample> provider = coordinator.getSampleProvider(device, session);
-	
+
 					List<? extends ActivitySample> samples = provider.getAllActivitySamples(start, end);
-	
+
 					if(samples != null) {
 						for (ActivitySample s : samples) {
 							try {
-	
+
 								((MiBandActivitySample) s).delete();
 								removedSamples.add(s);
-	
+
 							} catch (Exception e) {
-								
+
 								String msg = "ERROR while removing sample from Db " + s;
 								LOG.e(PLUGIN_NAME, msg, e);
-								
+
 								if(errors == null){
 									errors = new LinkedList<String>();
 								}
@@ -1367,11 +1394,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 				boolean hasErrors = errors == null;
 				if(removedSamples.size() > 0 || hasErrors){
-					
+
 
 					JSONObject result = new JSONObject();
 					addToJson(result, "message", hasErrors? "errors occured" : "success");
-					
+
 					if(errors != null){
 						JSONArray l = new JSONArray();
 						for(String s : errors){
@@ -1379,7 +1406,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 						}
 						addToJson(result, "errors", l);
 					}
-					
+
 					if(!removeAll){
 						JSONArray rmList = toJson(removedSamples);
 						addToJson(result, "removed", rmList);
@@ -1392,6 +1419,9 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 					String msg = lastError != null? " (last error) " + lastError.getMessage() : "error(s) while removing data.";
 					callbackContext.error("Could not remove any data: "+msg);
 				}
+
+				executeNextDbTask(DbTaskType.REMOVE);
+
 			} else {
 				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
 			}
@@ -1404,18 +1434,11 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		GBDevice device = getDevice();
 		if (device != null) {
 
-			if (removeTask != null && removeTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data removal already in progress");//TODO should this really be an error?
-				return;
-			} else if (refreshTask != null && refreshTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data retrieval task is in progress");//TODO should this really be an error?
-				return;
-			} else if (insertTask != null && insertTask.getStatus() != AsyncTask.Status.FINISHED) {
-				callbackContext.error("Data insertion already in progress");//TODO should this really be an error?
-				return;
+			DataInsertionTask task = new DataInsertionTask(TASK_INSERTING_DATA, args, cordova.getActivity(), callbackContext);
+			if(!queueIfDbTaskActive(task)){
+				insertTask = task.execute();
 			}
 
-			insertTask = new DataInsertionTask(TASK_INSERTING_DATA, args, cordova.getActivity(), callbackContext).execute();
 		} else {
 			doSendNoDeviceError(callbackContext, "Could not retrieve data");
 		}
@@ -1538,6 +1561,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 				} else {
 					callbackContext.error("errors occured while adding samples");//TODO should this more detailed?
 				}
+				executeNextDbTask(DbTaskType.INSERT);
 			} else {
 				LOG.i(PLUGIN_NAME, "Not retrieving data because Cordova activity is not available anymore");
 			}
@@ -1590,7 +1614,7 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 
 				//device connection state
 				o.putOpt(INFO_FIELD_STATE, deviceInfo.getState().toString());
-				
+
 			} else if(DeviceInfoType.BATTERY_INFO.equals(type)){
 
 				//device battery state
