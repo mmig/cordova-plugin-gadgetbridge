@@ -4,7 +4,7 @@
     xmlns="http://cordova.apache.org/ns/plugins/1.0"
 	xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-gadgetbridge"
-    version="0.3.0">
+    version="0.3.1">
 
     <name>GadgetbridgePlugin</name>
 
