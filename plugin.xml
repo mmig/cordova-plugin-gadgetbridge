@@ -4,7 +4,7 @@
     xmlns="http://cordova.apache.org/ns/plugins/1.0"
 	xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-gadgetbridge"
-    version="0.3.1">
+    version="0.3.2">
 
     <name>GadgetbridgePlugin</name>
 
@@ -46,7 +46,7 @@
         <source-file
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/GadgetbridgePlugin.java"
             target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
-            
+
         <source-file
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/SettingsUtil.java"
             target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
@@ -54,7 +54,7 @@
         <source-file
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/ApplySettings.java"
             target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
-            
+
         <!--framework src="com.android.support:appcompat-v7:23.3.0" />
         <framework src="com.android.support:support-v4:23.3.0" />
         <framework src="com.android.support:design:23.3.0" /-->
