@@ -8,5 +8,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/appcompat_v7"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="lib" path="stub/android-lib/classes.jar"/>
+	<classpathentry kind="lib" path="stub/greendao.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
