@@ -1,8 +1,11 @@
 
 repositories{
-  jcenter()
   maven {
       url "https://jitpack.io"
+  }
+  jcenter()
+  flatDir {
+      dirs 'src/main/libs'
   }
   flatDir {
       dirs 'libs'
