@@ -1,4 +1,4 @@
-package de.dfki.iui.mmir.plugins.gadgetbridge;
+package de.dfki.iui.mmir.plugins.gadgetbridge.utils;
 
 
 import android.app.Activity;
@@ -25,7 +25,7 @@ public class SettingsUtil {
 
 	public static final String NAME_SYNC_TASK = "busy_task_fetch_activity_data";
 	public static final String NAME_BUTTON_BROADCAST = "mi2_prefs_button_press_broadcast_default_value";
-	
+
 
 	public static final String NAME_ENABLE_CALL_HANDLER = "enableCallHandler";
 	public static final String NAME_ENABLE_SMS_HANDLER = "enableSmsHandler";
@@ -62,13 +62,13 @@ public class SettingsUtil {
 			name = it.next();
 
 			try {
-				
+
 				val = settings.get(name);
 				if(setPref(edit, name, val)){
 					applier.applySettings(name, val);
 					results.add(name);
 				}
-				
+
 			} catch (JSONException e) {
 				LOG.e(TAG, String.format("could not set %s", name), e);
 			}
@@ -89,7 +89,7 @@ public class SettingsUtil {
 
 	/////////////////////////////// static helpers //////////////////////////////////////////
 
-	
+
 	public static void enableCallHandler(boolean enable){
 		setPref(NAME_ENABLE_CALL_HANDLER, (Boolean) enable);
 	}

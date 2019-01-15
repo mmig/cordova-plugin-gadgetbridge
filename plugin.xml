@@ -38,17 +38,18 @@
         	<preference name="GB_EXTENDED_PERMISSIONS" value="$GB_EXTENDED_PERMISSIONS" />
         </config-file>
 
-        <source-file
-            src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/GadgetbridgePlugin.java"
-            target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
-
-        <source-file
-            src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/SettingsUtil.java"
-            target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
-
-        <source-file
-            src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/ApplySettings.java"
-            target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
+        <source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/GadgetbridgePlugin.java" 	target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/IDeviceManager.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/DeviceInfoType.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/db/InsertionTask.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/db" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/db/RemovalTask.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/db" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/db/RetrievalTask.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/db" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/db/DbTaskManager.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/db" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/db/DbTaskType.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/db" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/utils/ResultUtils.java" 	target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/utils" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/utils/SettingsUtil.java" 	target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/utils" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/utils/ApplySettings.java" 	target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/utils" />
+		<source-file src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/utils/JSONUtils.java" 		target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge/utils" />
 
         <framework src="res/android/res/gadgetbridgeBuild.gradle" custom="true" type="gradleReference" />
         <resource-file src="res/android/libs/gadgetbridge.aar" target="libs/gadgetbridge.aar" />
