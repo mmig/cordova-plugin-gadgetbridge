@@ -3,6 +3,5 @@ bin
 .settings
 .project
 /.classpath
-/stub/android-lib
 /node_modules/
 /test-data/
