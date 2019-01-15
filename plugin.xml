@@ -28,20 +28,15 @@
 
     <!-- android -->
     <platform name="android">
+        
+        <preference name="GB_EXTENDED_PERMISSIONS" default="false" />
 
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="GadgetbridgePlugin" >
 		        <param name="android-package" value="de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin" />
 		    </feature>
+        	<preference name="GB_EXTENDED_PERMISSIONS" value="$GB_EXTENDED_PERMISSIONS" />
         </config-file>
-
-        <!--config-file target="AndroidManifest.xml" parent="/*">
-            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
-      			<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-      			<uses-permission android:name="android.permission.RECORD_AUDIO"></uses-permission>
-      			<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
-      			<uses-permission android:name="android.permission.BLUETOOTH" />
-        </config-file-->
 
         <source-file
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/GadgetbridgePlugin.java"
@@ -55,12 +50,9 @@
             src="src/android/de/dfki/iui/mmir/plugins/gadgetbridge/ApplySettings.java"
             target-dir="src/de/dfki/iui/mmir/plugins/gadgetbridge" />
 
-        <!--framework src="com.android.support:appcompat-v7:23.3.0" />
-        <framework src="com.android.support:support-v4:23.3.0" />
-        <framework src="com.android.support:design:23.3.0" /-->
-
         <framework src="res/android/res/gadgetbridgeBuild.gradle" custom="true" type="gradleReference" />
         <resource-file src="res/android/libs/gadgetbridge.aar" target="libs/gadgetbridge.aar" />
+        <resource-file src="res/android/libs/gadgetbridgeExtPerm.aar" target="libs/gadgetbridgeExtPerm.aar" />
 
     </platform>
 

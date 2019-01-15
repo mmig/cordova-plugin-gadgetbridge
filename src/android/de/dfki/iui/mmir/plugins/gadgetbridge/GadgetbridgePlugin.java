@@ -27,10 +27,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.support.v4.content.LocalBroadcastManager;
-import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataInsertionTask;
-import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataRemovalTask;
-import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DataRetrievalTask;
-import de.dfki.iui.mmir.plugins.gadgetbridge.GadgetbridgePlugin.DbTaskType;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.activities.AppBlacklistActivity;
 import nodomain.freeyourgadget.gadgetbridge.activities.ConfigureAlarms;
@@ -104,6 +100,10 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 	private static final String TASK_RETRIEVING_DATA = "Retrieving Data";
 	private static final String TASK_REMOVING_DATA = "Removing Data";
 	private static final String TASK_INSERTING_DATA = "Inserting Data";
+
+	static final String PREF_ENABLE_EXTENDED_PERMISSIONS = "GB_EXTENDED_PERMISSIONS";
+//	static final String PREF_ENABLE_CALL_HANDLER = "GB_EXTENDED_PERMISSIONS_CALL";
+//	static final String PREF_ENABLE_SMS_HANDLER = "GB_EXTENDED_PERMISSIONS_SMS";
 
 	static final String PLUGIN_NAME = GadgetbridgePlugin.class.getSimpleName();
 	/** field type: double */
@@ -310,6 +310,13 @@ public class GadgetbridgePlugin extends CordovaPlugin {
 		filter = new IntentFilter();
 		filter.addAction(_buttonBroadcastName);
 		cordova.getActivity().getApplicationContext().registerReceiver(mButtonReceiver, filter);
+		
+		//TODO allow detailed permissions for call & sms separately
+		//NOTE enabling these requires the corresponding permission entries in the Android manifest (e.g. by using the corresponding AAR file which is selected via config.xml preference GB_EXTENDED_PERMISSIONS)
+		boolean enableExtPerm = this.preferences.getBoolean(PREF_ENABLE_EXTENDED_PERMISSIONS, false);
+		SettingsUtil.enableCallHandler(enableExtPerm);
+		SettingsUtil.enableSmsHandler(enableExtPerm);
+		
 
 //		//TODO add a callable init-method -> check there, if it is run the first time
 //		Prefs prefs = GBApplication.getPrefs();

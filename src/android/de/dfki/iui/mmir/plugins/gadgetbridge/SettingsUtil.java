@@ -25,6 +25,10 @@ public class SettingsUtil {
 
 	public static final String NAME_SYNC_TASK = "busy_task_fetch_activity_data";
 	public static final String NAME_BUTTON_BROADCAST = "mi2_prefs_button_press_broadcast_default_value";
+	
+
+	public static final String NAME_ENABLE_CALL_HANDLER = "enableCallHandler";
+	public static final String NAME_ENABLE_SMS_HANDLER = "enableSmsHandler";
 
 
 	private static String _SYNC_TASK_NAME;
@@ -84,6 +88,15 @@ public class SettingsUtil {
 	}
 
 	/////////////////////////////// static helpers //////////////////////////////////////////
+
+	
+	public static void enableCallHandler(boolean enable){
+		setPref(NAME_ENABLE_CALL_HANDLER, (Boolean) enable);
+	}
+
+	public static void enableSmsHandler(boolean enable){
+		setPref(NAME_ENABLE_SMS_HANDLER, (Boolean) enable);
+	}
 
 	public static String getSyncTaskName(Activity activity) {
 

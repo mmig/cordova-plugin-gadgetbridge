@@ -25,7 +25,33 @@ The compiled `gadgetbridge.aar` is based on Gadgetbridge version 0.30.0
 
 ```
 cordova plugin add https://github.com/mmig/cordova-plugin-gadgetbridge
+cordova plugin add https://github.com/mmig/cordova-plugin-gadgetbridge --variable GB_EXTENDED_PERMISSIONS=[false | true]
 ```
+
+## Plugin Configuration
+
+Some of the permission of `Gadgetbridge` are classified as _dangerous_, namely the SMS and Call Log permissions.
+Apps that use these permissions e.g. need to meet some additional criteria in order to be allowed in the Google PlayStore,
+see [Use of SMS or Call Log permission groups][5].
+
+For this reason, the plugin __by default disables__ these permissions; as a result, 
+the app does not listen to SMS and phone calls and the paired device(s) will not be notified 
+with the corresponding information, e.g. of an incoming SMS or phone call.
+
+For enabling the permissions and the corresponding functionality, install the plugin with argument `--variable GB_EXTENDED_PERMISSIONS=true`.
+
+Or set the corresponding preference in `config.xml`:
+```xml
+<preference name="GB_EXTENDED_PERMISSIONS" value="true" />
+``` 
+
+NOTE the command-line argument is persisted in `config.xml` as `<variable name="GB_EXTENDED_PERMISSIONS" value="{THE VALUE}" />`,
+     but changing the this `variable` in `config.xml` after the plugin was installed, will have no effect.  
+     For changing the setting after the plugin was installed, the corresponding preference tag can be used, i.e.  
+     ```xml
+     <preference name="GB_EXTENDED_PERMISSIONS" value="true" />
+     ``` 
+
 
 # Usage
 
@@ -71,7 +97,7 @@ GadgetbridgePlugin.getDeviceInfo(successCallback({//or null
 //Check, if paired device is (fully) connected
 GadgetbridgePlugin.isConnected(successCallback(boolean), errorCallback);
 
-//Connect to paired device.
+//Connect to paired device
 GadgetbridgePlugin.connect(successCallback, errorCallback);
 GadgetbridgePlugin.connect(timeout, successCallback, errorCallback);
 
@@ -105,9 +131,9 @@ GadgetbridgePlugin.retrieveData(successCallback([{
   sleep2: number,//float
   notWorn: boolean,
   steps: number,//integer
-  heartRate: number,// [0,255]
+  heartRate: number,// [0,255], NOTE value 255 indicates an invalid measurement
   raw: number,//integer
-  timestamp: number//10-digit / UNIX timestamp
+  timestamp: number//10-digit / UNIX timestamp, i.e. without milliseconds
 }, ... ]), errorCallback);
 //Get activity data from application database
 GadgetbridgePlugin.retrieveData(start, successCallback(data), errorCallback);
@@ -148,11 +174,13 @@ GadgetbridgePlugin.setConfig({setting1: value1, ...}, successCallback([setting1,
 
 //listen to connection changes of device
 GadgetbridgePlugin.onConnect(listener, errorCallback);
-GadgetbridgePlugin.offConnect(successCallback, errorCallback);
+GadgetbridgePlugin.offConnect(listener, errorCallback);
 
 //listen to button presses of (Mi-Band 2) device
+//NOTE the button events depend on the corresponding configuration, i.e. settings for (can also be set via the "MiBandPreferencesActivity" activity/view)
+//       "mi2_enable_button_action", "mi2_button_action_vibrate",  "mi_button_press_count",  "mi_button_press_count_max_delay", "mi_button_press_count_match_delay",  "mi_button_press_broadcast"
 GadgetbridgePlugin.onButton(listener, errorCallback);
-GadgetbridgePlugin.offButton(successCallback, errorCallback);
+GadgetbridgePlugin.offButton(listener, errorCallback);
 
 ```
 
@@ -208,3 +236,4 @@ dependencies {
 [2]: https://github.com/mmig/Gadgetbridge
 [3]: https://github.com/mmig/Gadgetbridge/tree/as-library
 [4]: https://mmig.github.io/cordova-plugin-gadgetbridge/interfaces/_gadgetbridge_d_.gadgetbridgeplugin.html
+[5]: https://support.google.com/googleplay/android-developer/answer/9047303

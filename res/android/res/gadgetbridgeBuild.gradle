@@ -12,6 +12,10 @@ repositories{
   }
 }
 
+def PLUGIN_NAME = "cordova-plugin-gadgetbridge";
+def IS_GB_EXTENDED_PERMISSIONS = cdvHelpers.getConfigPreference("GB_EXTENDED_PERMISSIONS", null) as String;
+println("| Enabled " + PLUGIN_NAME + " extended call & SMS permissions? " + IS_GB_EXTENDED_PERMISSIONS);
+
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.android.support:appcompat-v7:27.1.1"
@@ -35,8 +39,12 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:3.5"
     implementation "org.cyanogenmod:platform.sdk:6.0"
     implementation 'com.jaredrummler:colorpicker:1.0.2'
-
-    implementation(name:'gadgetbridge', ext:'aar')
+	
+	if("true".equals(IS_GB_EXTENDED_PERMISSIONS)) {
+    	implementation(name:'gadgetbridgeExtPerm', ext:'aar')
+	} else {
+		implementation(name:'gadgetbridge', ext:'aar')
+	}
 }
 
 android {    
