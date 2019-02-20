@@ -2,11 +2,14 @@
 ----
 
 Cordova plugin for using [Gadgetbridge][1] as a library,
-for accessing Pebble, Mi Band etc. devices.
+for accessing Pebble, Mi Band etc. devices on Android devices.
 
 # Limitations
 
-Due to background service, _Gadgetbridge_ can be installed only once on an android-device:
+Supported platforms:  
+ * `android`
+
+Due to background services, _Gadgetbridge_ can be installed only once on an android-device:
  * either the _Gadgetbrige_ app itself
  * or exactly one app that uses this cordova-plugin
 
@@ -46,7 +49,7 @@ Or set the corresponding preference in `config.xml`:
 ``` 
 
 NOTE the command-line argument is persisted in `config.xml` as `<variable name="GB_EXTENDED_PERMISSIONS" value="{THE VALUE}" />`,
-     but changing the this `variable` in `config.xml` after the plugin was installed, will have no effect.  
+     but changing the `variable` in `config.xml` after the plugin was installed, will have no effect.  
      For changing the setting after the plugin was installed, the corresponding preference tag can be used, i.e.  
      ```xml
      <preference name="GB_EXTENDED_PERMISSIONS" value="true" />
