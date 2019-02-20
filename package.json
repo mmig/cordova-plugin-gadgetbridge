@@ -5,8 +5,7 @@
   "cordova": {
     "id": "cordova-plugin-gadgetbridge",
     "platforms": [
-      "android",
-      "ios"
+      "android"
     ]
   },
   "repository": {
