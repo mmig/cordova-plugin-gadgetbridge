@@ -48,12 +48,15 @@ Or set the corresponding preference in `config.xml`:
 <preference name="GB_EXTENDED_PERMISSIONS" value="true" />
 ``` 
 
-NOTE the command-line argument is persisted in `config.xml` as `<variable name="GB_EXTENDED_PERMISSIONS" value="{THE VALUE}" />`,
+**NOTE** the command-line argument is persisted in `config.xml` as `<variable name="GB_EXTENDED_PERMISSIONS" value="{THE VALUE}" />`,
      but changing the `variable` in `config.xml` after the plugin was installed, will have no effect.  
-     For changing the setting after the plugin was installed, the corresponding preference tag can be used, i.e.  
-     ```xml
-     <preference name="GB_EXTENDED_PERMISSIONS" value="true" />
-     ``` 
+     For changing the setting after the plugin was installed, the corresponding preference tag can be used, e.g. the following would enable the extended permissions:	  
+```xml
+<preference name="GB_EXTENDED_PERMISSIONS" value="true" />
+<plugin name="cordova-plugin-gadgetbridge" spec="git+https://github.com/mmig/cordova-plugin-gadgetbridge">
+  <variable name="GB_EXTENDED_PERMISSIONS" value="false" />
+</plugin>
+``` 
 
 
 # Usage
