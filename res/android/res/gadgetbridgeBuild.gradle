@@ -39,7 +39,9 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:3.5"
     implementation "org.cyanogenmod:platform.sdk:6.0"
     implementation 'com.jaredrummler:colorpicker:1.0.2'
-	
+//    implementation project(":DaoCore")
+    implementation 'com.github.wax911:android-emojify:0.1.7'
+    
 	if("true".equals(IS_GB_EXTENDED_PERMISSIONS)) {
     	implementation(name:'gadgetbridgeExtPerm', ext:'aar')
 	} else {

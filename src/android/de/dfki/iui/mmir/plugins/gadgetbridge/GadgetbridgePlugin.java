@@ -929,11 +929,13 @@ public class GadgetbridgePlugin extends CordovaPlugin implements IDeviceManager 
 
 							NotificationSpec notification = new NotificationSpec();
 
-							if(currentNotificationId + 1 >= Integer.MAX_VALUE){
-								currentNotificationId = 0;
-							}
-
-							notification.id = ++currentNotificationId;
+							//DISABLED manually setting notification.id: id is now automatically set/incremented in NotificationSpec constructor
+//							if(currentNotificationId + 1 >= Integer.MAX_VALUE){
+//								currentNotificationId = 0;
+//							}
+//							notification.id = ++currentNotificationId;
+							currentNotificationId = notification.getId();//MOD retrieve current id
+							
 							notification.title = msg;
 							//notification.subject = msg;
 							notification.type = count == 0? NotificationType.GENERIC_ALARM_CLOCK : NotificationType.GENERIC_TEXT_ONLY_MESSAGE;

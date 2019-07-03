@@ -20,8 +20,8 @@ Uses a [slightly modified][2] version of [Gadgetbridge][1] that is compiled
 [as-library][3] instead of as an `application`, see  
 `res/android/libs/gadgetbridge.aar`
 
-The compiled `gadgetbridge.aar` is based on Gadgetbridge version 0.30.0
-(versionCode 138, git hash 56477efcdfa96e239a3d6b46f5d1b617a1955917).
+The compiled `gadgetbridge.aar` is based on Gadgetbridge version 0.32.1
+(versionCode 144, git hash 78e7c0145311b89365db3a0e80c7555976971b6f).
 
 
 # Installation
